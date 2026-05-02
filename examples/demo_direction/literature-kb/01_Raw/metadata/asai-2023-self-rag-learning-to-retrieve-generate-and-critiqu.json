@@ -1,0 +1,23 @@
+{
+  "type": "paper",
+  "id": "asai-2023-self-rag-learning-to-retrieve-generate-and-critiqu",
+  "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+  "authors": [
+    "Akari Asai",
+    "Zeqiu Wu",
+    "Yizhong Wang",
+    "Avirup Sil",
+    "Hannaneh Hajishirzi"
+  ],
+  "year": 2023,
+  "venue": "ICLR 2024",
+  "arxiv_id": "2310.11511",
+  "status": "published",
+  "source": "manual",
+  "added_on": "2026-05-02",
+  "tags": [
+    "rag",
+    "self-reflection",
+    "critique"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/your-org/research-wiki/schemas/workspace_paper.schema.json",
+  "title": "WorkspacePaperFrontmatter",
+  "description": "YAML frontmatter for research-workspaces/<id>/00_Project/paper_status.md. Mirrors lgrlw.schemas.WorkspacePaperFrontmatter.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "id", "kind", "title", "status", "created_on"],
+  "properties": {
+    "type":  {"const": "workspace_paper"},
+    "id":    {"type": "string", "minLength": 2, "maxLength": 80, "pattern": "^[a-z0-9_](?:[a-z0-9_-]*)?$"},
+    "kind":  {"enum": ["paper", "idea"]},
+    "title": {"type": "string", "minLength": 3},
+    "status": {
+      "enum": [
+        "drafting", "experimenting", "writing",
+        "submitted", "under_review",
+        "major_revision", "minor_revision",
+        "accepted", "rejected", "withdrawn"
+      ]
+    },
+    "created_on":    {"type": "string", "format": "date"},
+    "final_title":   {"type": ["string", "null"]},
+    "final_authors": {"type": ["array", "null"], "items": {"type": "string"}},
+    "venue":         {"type": ["string", "null"]},
+    "year":          {"type": ["integer", "null"], "minimum": 1900, "maximum": 2100},
+    "doi":           {"type": ["string", "null"]},
+    "arxiv_id":      {"type": ["string", "null"]}
+  }
+}

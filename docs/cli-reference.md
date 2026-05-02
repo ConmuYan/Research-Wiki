@@ -1,0 +1,150 @@
+# CLI reference
+
+The `lgrlw` CLI in v0.1 exposes five commands. All commands respect
+`-h` / `--help` for detailed usage.
+
+```
+$ lgrlw --help
+```
+
+| Command | Summary |
+|---|---|
+| [`lgrlw init`](#lgrlw-init) | Bootstrap a new Research-Wiki project. |
+| [`lgrlw new-workspace`](#lgrlw-new-workspace) | Create a workspace (paper or idea). |
+| [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (v0.1: `--manual`). |
+| [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
+| [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
+
+Planned for v0.2: `lgrlw promote`; `add-literature --arxiv / --doi / --ss`.
+
+---
+
+## `lgrlw init`
+
+Scaffold a new project.
+
+```
+lgrlw init <path> --direction <slug> [--force]
+```
+
+| Option | Meaning |
+|---|---|
+| `path` | Directory to create (parents created if missing). |
+| `--direction`, `-d` | Short slug naming the research direction. |
+| `--force` | Re-initialise even if `.lgrlw.toml` already exists. |
+
+**Output.** `<path>/literature-kb/` populated from the packaged template,
+an empty `<path>/research-workspaces/` with a pointer README, and
+`<path>/.lgrlw.toml`.
+
+---
+
+## `lgrlw new-workspace`
+
+```
+lgrlw new-workspace <id> --title "..." [--kind paper|idea] [--root <project-root>]
+```
+
+| Option | Meaning |
+|---|---|
+| `id` | Workspace id (slug). Matches `^[a-z0-9_](?:[a-z0-9_-]*)?$`. |
+| `--title` | Working title (required). |
+| `--kind` | `paper` (default) or `idea`. Selects the template. |
+| `--root` | Existing Research-Wiki project root (auto-detected if omitted). |
+
+**Output.** `research-workspaces/<id>/` populated from the matching
+template. For `--kind paper`, `00_Project/paper_status.md` has frontmatter
+rendered from the supplied title and `status: drafting`.
+
+---
+
+## `lgrlw add-literature`
+
+v0.1: manual entry only.
+
+```
+lgrlw add-literature --manual \
+  --title "<title>" \
+  --authors "<First Last, Another Name, ...>" \
+  --year <yyyy> \
+  [--venue "..."] [--doi ...] [--arxiv ...] [--url ...] \
+  [--status published|accepted|preprint] \
+  [--tags "tag1,tag2"] \
+  [--id <slug>] [--force] [--root <project-root>]
+```
+
+| Option | Meaning |
+|---|---|
+| `--manual` | Required in v0.1; asserts this is a hand-entered record. |
+| `--title` / `--authors` / `--year` | Mandatory for manual. |
+| `--venue` | Free-form (e.g. "ICLR 2024", "arXiv preprint"). |
+| `--doi` / `--arxiv` | Validated against the patterns in `lgrlw.schemas`. |
+| `--url` | Canonical URL if different from doi.org / arxiv.org. |
+| `--status` | One of `published` / `accepted` / `preprint`. |
+| `--tags` | Comma-separated tags. |
+| `--id` | Override the auto-generated slug. |
+| `--force` | Replace an existing paper card and metadata with the same id. Without this flag, duplicate ids fail. |
+| `--root` | Existing Research-Wiki project root (auto-detected if omitted). |
+
+**Output.**
+
+- Paper card: `literature-kb/02_Literature/Papers/<id>.md` (frontmatter + body scaffold).
+- Metadata snapshot: `literature-kb/01_Raw/metadata/<id>.json`.
+- Log line: appended to `literature-kb/00_System/log.md`.
+
+---
+
+## `lgrlw export-pack`
+
+```
+lgrlw export-pack <workspace-id> [--root <project-root>]
+```
+
+Builds a dated KB snapshot under
+`literature-kb/06_Exports/<workspace-id>_<YYYY-MM-DD>/`, simultaneously
+mirrored into
+`research-workspaces/<workspace-id>/01_KB_Exports/<same-name>/`. The pack
+root contains `export_manifest.json` with SHA-256 for every file. See
+[`export-protocol.md`](./export-protocol.md) for the full spec.
+
+---
+
+## `lgrlw lint`
+
+```
+lgrlw lint [<project-root>] [--root <project-root>]
+```
+
+Runs every invariant check:
+
+- `structure.*` &mdash; the project root has `.lgrlw.toml`, `literature-kb/`,
+  `research-workspaces/`.
+- `schema.*` &mdash; every paper card and every `paper_status.md` satisfies
+  its pydantic schema.
+- `boundary.*` &mdash; no workspace content / reference / status value
+  leaked into the KB.
+- `manifest.*` &mdash; every export pack has a valid manifest and every
+  recorded SHA-256 matches.
+
+Exits `0` iff there are no findings. Warnings such as
+`manifest.file_extra` are reported and also produce a non-zero exit code.
+
+## Project root semantics
+
+- `lgrlw init <path>` creates a new project at `<path>` and does not accept `--root`.
+- `lgrlw new-workspace`, `lgrlw add-literature`, and `lgrlw export-pack` operate on an existing project. Pass `--root <project-root>` explicitly, or omit it to auto-detect the nearest ancestor containing `.lgrlw.toml`.
+- `lgrlw lint` accepts either a positional project root (`lgrlw lint <project-root>`) or `--root <project-root>` for consistency with the other project-scoped commands. Supplying both with different paths is an error.
+
+## Global options
+
+- `--help`, `-h` &mdash; show command help.
+- `--version`, `-V` &mdash; print installed `lgrlw` version.
+
+## Environment
+
+v0.1 reads **no environment variables** and makes **no network calls**.
+When v0.2 adds networked fetchers, the following env vars will be honoured:
+
+- `OPENALEX_EMAIL` &mdash; contact email for polite OpenAlex usage.
+- `S2_API_KEY` &mdash; Semantic Scholar API key.
+- `CROSSREF_MAILTO` &mdash; contact email for polite Crossref usage.

@@ -1,0 +1,30 @@
+{
+  "type": "paper",
+  "id": "lewis-2020-retrieval-augmented-generation-for-knowledge-inte",
+  "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+  "authors": [
+    "Patrick Lewis",
+    "Ethan Perez",
+    "Aleksandra Piktus",
+    "Fabio Petroni",
+    "Vladimir Karpukhin",
+    "Naman Goyal",
+    "Heinrich Kuttler",
+    "Mike Lewis",
+    "Wen-tau Yih",
+    "Tim Rocktaschel",
+    "Sebastian Riedel",
+    "Douwe Kiela"
+  ],
+  "year": 2020,
+  "venue": "NeurIPS 2020",
+  "arxiv_id": "2005.11401",
+  "status": "published",
+  "source": "manual",
+  "added_on": "2026-05-02",
+  "tags": [
+    "rag",
+    "foundational",
+    "knowledge-intensive"
+  ]
+}

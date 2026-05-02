@@ -1,0 +1,26 @@
+{
+  "type": "paper",
+  "id": "karpukhin-2020-dense-passage-retrieval-for-open-domain-quest",
+  "title": "Dense Passage Retrieval for Open-Domain Question Answering",
+  "authors": [
+    "Vladimir Karpukhin",
+    "Barlas Oguz",
+    "Sewon Min",
+    "Patrick Lewis",
+    "Ledell Wu",
+    "Sergey Edunov",
+    "Danqi Chen",
+    "Wen-tau Yih"
+  ],
+  "year": 2020,
+  "venue": "EMNLP 2020",
+  "arxiv_id": "2004.04906",
+  "status": "published",
+  "source": "manual",
+  "added_on": "2026-05-02",
+  "tags": [
+    "retrieval",
+    "dense",
+    "dpr"
+  ]
+}

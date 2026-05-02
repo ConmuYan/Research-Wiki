@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "tool_version": "0.1.0",
+  "workspace_id": "paper_001",
+  "exported_at": "2026-05-02T09:55:16Z",
+  "kb_root_relative": "literature-kb",
+  "pack_dir_relative": "literature-kb/06_Exports/paper_001_2026-05-02",
+  "paper_ids": [
+    "asai-2023-self-rag-learning-to-retrieve-generate-and-critiqu",
+    "karpukhin-2020-dense-passage-retrieval-for-open-domain-quest",
+    "lewis-2020-retrieval-augmented-generation-for-knowledge-inte"
+  ],
+  "files": {
+    "02_Literature/Papers/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "02_Literature/Papers/asai-2023-self-rag-learning-to-retrieve-generate-and-critiqu.md": "436006739067fe0b7e0f323ab8728d95850cb67f3f87508620b7bc01408ca08e",
+    "02_Literature/Papers/karpukhin-2020-dense-passage-retrieval-for-open-domain-quest.md": "39aa8c3fccdbc31aff8d1694e9a1bca0692730111f95c458a0ee2fd96568beb3",
+    "02_Literature/Papers/lewis-2020-retrieval-augmented-generation-for-knowledge-inte.md": "24e835c3935298311e539672e9c34995a897a7d62856d86a7a49dcec4129d29f",
+    "03_Field_Structure/Dataset_Benchmark_Map.md": "1a36ce41bdfe35e90ce100fdecf56f113f6276f4c4d69de045e913d21381ae7f",
+    "03_Field_Structure/Method_Taxonomy.md": "8856dfa498ae5fde5a03920d485228c031226af6fb239b7a7e068eeec767aabc",
+    "03_Field_Structure/Metric_Map.md": "acda20c51978a3aff3b4076e50e1271289a0c707ec8a3d09b5c66d09796abbb5",
+    "03_Field_Structure/Overview.md": "242140ebdfb76da9292115fb8177ea88c498d7c8ecbe9eb09efacc40604f1cae",
+    "03_Field_Structure/Problem_Evolution.md": "829f234fcb89d3c03b07a1bb838f9203d298e533ddf88154fd6695ea0c6a1210",
+    "03_Field_Structure/Timeline.md": "04e611d030d6824aacb6c22adc290673215985ee44915070f9d63f47fda9fc86",
+    "05_Evidence/Claims/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "05_Evidence/Contradictions.md": "cb321f56f9cb5c7bf9d4cf0b6810c63e122bc1845f734fa9f489f734d5f32f98",
+    "05_Evidence/Evidence_Map.md": "7a927b8a872169b2f5bb606a0fe39412cceb75aad9108da199068f6e962b5540",
+    "05_Evidence/Limitations_Map.md": "cfa7096f69d26c429c5db8f5e2788c0e91d1859ed99ab97beff28131bfa8d203",
+    "05_Evidence/Open_Problems.md": "ec0100235b289b26f40decf8372563bb38a257f719f1df4ddc47612481dee9d7"
+  }
+}

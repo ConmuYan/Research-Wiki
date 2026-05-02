@@ -1,0 +1,73 @@
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+pip-wheel-metadata/
+.Python
+*.so
+
+# ---------------------------------------------------------------------------
+# Virtual envs
+# ---------------------------------------------------------------------------
+.venv/
+venv/
+env/
+.envrc
+
+# ---------------------------------------------------------------------------
+# Tooling caches
+# ---------------------------------------------------------------------------
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# ---------------------------------------------------------------------------
+# IDE / OS
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# LGRLW runtime artifacts (local state, never committed AT THE REPO ROOT).
+# Patterns are anchored with "/" so they only match the top-level project,
+# leaving templates/ and examples/ free to ship their own literature-kb/.
+# ---------------------------------------------------------------------------
+/.lgrlw.toml
+/.lgrlw.local.toml
+/literature-kb/01_Raw/pdf/*
+!/literature-kb/01_Raw/pdf/.gitkeep
+/literature-kb/01_Raw/mineru_md/*
+!/literature-kb/01_Raw/mineru_md/.gitkeep
+/literature-kb/01_Raw/metadata/*.json
+!/literature-kb/01_Raw/metadata/.gitkeep
+/literature-kb/06_Exports/*/
+!/literature-kb/06_Exports/.gitkeep
+
+# Obsidian workspace state (per-user, never shared)
+.obsidian/workspace*
+.obsidian/cache
+.obsidian/plugins/*/data.json
+
+# ---------------------------------------------------------------------------
+# Secrets
+# ---------------------------------------------------------------------------
+.env
+.env.*
+*.pem
+*.key
