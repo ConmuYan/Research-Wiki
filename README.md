@@ -8,7 +8,7 @@
 
 Strict separation between *public literature* and *unpublished research*, with accepted papers as the only legal feedback path.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/your-org/research-wiki/ci.yml?branch=main&label=CI)](./.github/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/ConmuYan/Research-Wiki/ci.yml?branch=main&label=CI)](./.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Docs](https://img.shields.io/badge/docs-%F0%9F%93%96-informational)](./docs)
@@ -141,13 +141,13 @@ Every stage has an explicit directory location, a set of allowed artifacts, and 
 ```bash
 pip install lgrlw                   # from PyPI (once published)
 # or, for the current dev version:
-pip install git+https://github.com/your-org/research-wiki.git
+pip install git+https://github.com/ConmuYan/Research-Wiki.git
 ```
 
 Or clone and install editable:
 
 ```bash
-git clone https://github.com/your-org/research-wiki.git
+git clone https://github.com/ConmuYan/Research-Wiki.git
 cd research-wiki
 pip install -e ".[dev]"
 ```
@@ -286,7 +286,7 @@ Every other write — ideas, hypotheses, experiment logs, draft claims, rebuttal
 - [ ] Web dashboard (read-only) for taxonomy & evidence maps
 - [ ] Multi-direction mono-repo support
 
-See [open issues](https://github.com/your-org/research-wiki/issues) and [`CHANGELOG.md`](./CHANGELOG.md).
+See [open issues](https://github.com/ConmuYan/Research-Wiki/issues) and [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 

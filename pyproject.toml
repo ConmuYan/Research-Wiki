@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "lgrlw"
 version = "0.1.0"
-description = "Literature-Grounded Research Lifecycle Wiki — a long-horizon research operating system with strict KB/Workspace separation, export snapshots, and accepted-paper promotion."
+description = "Literature-Grounded Research Lifecycle Wiki — a long-horizon research operating system with strict KB/Workspace separation and immutable export snapshots."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
@@ -48,10 +48,12 @@ dependencies = [
 [project.optional-dependencies]
 # v0.2 will ship networked fetchers and add httpx + bibtexparser + respx.
 dev = [
+  "build>=1.2",
   "pytest>=8.2",
   "pytest-cov>=5.0",
   "ruff>=0.5",
   "mypy>=1.10",
+  "twine>=5.0",
   "types-PyYAML",
 ]
 
@@ -59,11 +61,11 @@ dev = [
 lgrlw = "lgrlw.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/your-org/research-wiki"
-Documentation = "https://github.com/your-org/research-wiki/tree/main/docs"
-Repository = "https://github.com/your-org/research-wiki"
-Issues = "https://github.com/your-org/research-wiki/issues"
-Changelog = "https://github.com/your-org/research-wiki/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/ConmuYan/Research-Wiki"
+Documentation = "https://github.com/ConmuYan/Research-Wiki/tree/main/docs"
+Repository = "https://github.com/ConmuYan/Research-Wiki"
+Issues = "https://github.com/ConmuYan/Research-Wiki/issues"
+Changelog = "https://github.com/ConmuYan/Research-Wiki/blob/main/CHANGELOG.md"
 
 # ---------------------------------------------------------------------------
 # Packaging

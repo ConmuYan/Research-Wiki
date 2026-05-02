@@ -8,7 +8,7 @@
 
 严格分离「公开文献世界」与「我未发表的研究过程」，仅允许已接收论文作为回流节点。
 
-[![CI](https://img.shields.io/github/actions/workflow/status/your-org/research-wiki/ci.yml?branch=main&label=CI)](./.github/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/ConmuYan/Research-Wiki/ci.yml?branch=main&label=CI)](./.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Docs](https://img.shields.io/badge/docs-%F0%9F%93%96-informational)](./docs)
@@ -141,13 +141,13 @@ stateDiagram-v2
 ```bash
 pip install lgrlw                     # 发布到 PyPI 后
 # 或安装开发版：
-pip install git+https://github.com/your-org/research-wiki.git
+pip install git+https://github.com/ConmuYan/Research-Wiki.git
 ```
 
 或者 clone 后以开发模式安装：
 
 ```bash
-git clone https://github.com/your-org/research-wiki.git
+git clone https://github.com/ConmuYan/Research-Wiki.git
 cd research-wiki
 pip install -e ".[dev]"
 ```
@@ -286,7 +286,7 @@ research-wiki/
 - [ ] 只读 Web dashboard（taxonomy、evidence map）
 - [ ] 多方向 monorepo 支持
 
-另见 [open issues](https://github.com/your-org/research-wiki/issues) 与 [`CHANGELOG.md`](./CHANGELOG.md)。
+另见 [open issues](https://github.com/ConmuYan/Research-Wiki/issues) 与 [`CHANGELOG.md`](./CHANGELOG.md)。
 
 ---
 
