@@ -50,3 +50,8 @@ jobs:
 
       - name: End-to-end smoke test (lint the bundled demo)
         run: lgrlw lint examples/demo_direction
+
+      - name: Build distribution and check metadata
+        run: |
+          python -m build
+          twine check dist/*

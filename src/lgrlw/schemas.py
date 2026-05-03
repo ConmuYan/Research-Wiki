@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from datetime import date
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -83,6 +83,47 @@ class PaperFrontmatter(BaseModel):
         if not PAPER_ID_PATTERN.fullmatch(v):
             raise ValueError(f"invalid paper id {v!r}; must match {PAPER_ID_PATTERN.pattern}")
         return v
+
+    @field_validator("doi")
+    @classmethod
+    def _validate_doi(cls, v: str | None) -> str | None:
+        if v is not None and not DOI_PATTERN.fullmatch(v):
+            raise ValueError(f"invalid DOI {v!r}")
+        return v
+
+    @field_validator("arxiv_id")
+    @classmethod
+    def _validate_arxiv(cls, v: str | None) -> str | None:
+        if v is not None and not ARXIV_PATTERN.fullmatch(v):
+            raise ValueError(f"invalid arXiv id {v!r}")
+        return v
+
+    @field_validator("authors")
+    @classmethod
+    def _validate_authors(cls, v: list[str]) -> list[str]:
+        cleaned = [a.strip() for a in v if a and a.strip()]
+        if not cleaned:
+            raise ValueError("authors must contain at least one non-empty name")
+        return cleaned
+
+
+class PaperMetadata(BaseModel):
+    """Canonical metadata returned by networked literature fetchers."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, use_enum_values=True)
+
+    title: str = Field(min_length=3)
+    authors: list[str] = Field(min_length=1)
+    year: int | None = Field(default=None, ge=1900, le=2100)
+    venue: str | None = None
+    doi: str | None = None
+    arxiv_id: str | None = None
+    openalex_id: str | None = None
+    semantic_scholar_id: str | None = None
+    url: str | None = None
+    abstract: str | None = None
+    source: PaperKind
+    raw: dict[str, Any] | None = None
 
     @field_validator("doi")
     @classmethod
@@ -257,6 +298,7 @@ __all__ = [
     "LintSeverity",
     "PaperFrontmatter",
     "PaperKind",
+    "PaperMetadata",
     "PaperStatus",
     "ProjectConfig",
     "WorkspaceKind",

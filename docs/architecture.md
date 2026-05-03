@@ -51,6 +51,10 @@ src/lgrlw/
     lint.py
   export/
     pack.py           # build_export_pack -- the snapshot builder
+  fetchers/            # v0.2 networked metadata fetchers
+    base.py
+    crossref.py
+    errors.py
   lint/               # one rule family per file
     structure.py
     schema.py

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ConmuYan/Research-Wiki/schemas/paper_metadata.schema.json",
+  "title": "PaperMetadata",
+  "description": "Canonical metadata returned by networked literature fetchers. Mirrors lgrlw.schemas.PaperMetadata.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "authors", "source"],
+  "properties": {
+    "title": {"type": "string", "minLength": 3},
+    "authors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "year": {"type": ["integer", "null"], "minimum": 1900, "maximum": 2100},
+    "venue": {"type": ["string", "null"]},
+    "doi": {"type": ["string", "null"], "pattern": "^10\\.\\d{4,9}/\\S+$"},
+    "arxiv_id": {
+      "type": ["string", "null"],
+      "pattern": "^(?:\\d{4}\\.\\d{4,5}(?:v\\d+)?|[a-z\\-]+(?:\\.[A-Z]{2})?/\\d{7}(?:v\\d+)?)$"
+    },
+    "openalex_id": {"type": ["string", "null"]},
+    "semantic_scholar_id": {"type": ["string", "null"]},
+    "url": {"type": ["string", "null"]},
+    "abstract": {"type": ["string", "null"]},
+    "source": {"enum": ["manual", "arxiv", "openalex", "semantic_scholar", "crossref", "doi", "promoted"]},
+    "raw": {"type": ["object", "null"]}
+  }
+}

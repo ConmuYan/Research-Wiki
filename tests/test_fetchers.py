@@ -1,0 +1,87 @@
+"""Tests for networked literature metadata fetchers."""
+
+from __future__ import annotations
+
+import httpx
+import pytest
+import respx
+
+from lgrlw.fetchers.crossref import CROSSREF_WORKS_URL, CrossrefFetcher
+from lgrlw.fetchers.errors import FetcherError, FetcherNotFoundError
+
+
+def test_crossref_fetcher_returns_canonical_metadata(respx_mock: respx.MockRouter) -> None:
+    route = respx_mock.get(f"{CROSSREF_WORKS_URL}/10.5555/example").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "message": {
+                    "title": ["Example Paper"],
+                    "author": [
+                        {"given": "Alice", "family": "A"},
+                        {"given": "Bob", "family": "B"},
+                    ],
+                    "published-print": {"date-parts": [[2024, 1, 1]]},
+                    "container-title": ["ExampleConf"],
+                    "DOI": "10.5555/example",
+                    "URL": "https://doi.org/10.5555/example",
+                }
+            },
+        )
+    )
+
+    metadata = CrossrefFetcher().fetch("https://doi.org/10.5555/EXAMPLE")
+
+    assert route.called
+    assert metadata.title == "Example Paper"
+    assert metadata.authors == ["Alice A", "Bob B"]
+    assert metadata.year == 2024
+    assert metadata.venue == "ExampleConf"
+    assert metadata.doi == "10.5555/example"
+    assert metadata.url == "https://doi.org/10.5555/example"
+    assert metadata.source == "crossref"
+
+
+def test_crossref_fetcher_sends_mailto_from_environment(
+    respx_mock: respx.MockRouter, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CROSSREF_MAILTO", "maintainer@example.com")
+    route = respx_mock.get(f"{CROSSREF_WORKS_URL}/10.5555/mailto").mock(
+        return_value=httpx.Response(200, json={"message": _minimal_message("Mailto Paper")})
+    )
+
+    CrossrefFetcher().fetch("10.5555/mailto")
+
+    assert route.calls.last.request.url.params["mailto"] == "maintainer@example.com"
+
+
+def test_crossref_fetcher_raises_not_found(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get(f"{CROSSREF_WORKS_URL}/10.5555/missing").mock(
+        return_value=httpx.Response(404, json={"status": "error"})
+    )
+
+    with pytest.raises(FetcherNotFoundError):
+        CrossrefFetcher().fetch("10.5555/missing")
+
+
+def test_crossref_fetcher_rejects_malformed_payload(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get(f"{CROSSREF_WORKS_URL}/10.5555/malformed").mock(
+        return_value=httpx.Response(200, json={"message": {"title": ["No Authors"]}})
+    )
+
+    with pytest.raises(FetcherError):
+        CrossrefFetcher().fetch("10.5555/malformed")
+
+
+def test_crossref_fetcher_rejects_invalid_doi() -> None:
+    with pytest.raises(FetcherError):
+        CrossrefFetcher().fetch("not-a-doi")
+
+
+def _minimal_message(title: str) -> dict[str, object]:
+    return {
+        "title": [title],
+        "author": [{"given": "Alice", "family": "A"}],
+        "issued": {"date-parts": [[2024]]},
+        "container-title": ["ExampleConf"],
+    }

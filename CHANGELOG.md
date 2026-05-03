@@ -5,6 +5,19 @@ All notable changes to Research-Wiki are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses semantic versioning.
 
+## [Unreleased]
+
+### Added
+
+- Development branch for v0.2 networked literature ingestion.
+- `PaperMetadata` schema and Crossref fetcher foundation with mocked HTTP
+  tests.
+
+### Changed
+
+- CI now builds distributions and runs `twine check` on every test matrix
+  entry.
+
 ## [0.1.0] - 2026-05-02
 
 ### Added
