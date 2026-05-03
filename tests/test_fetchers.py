@@ -6,6 +6,7 @@ import httpx
 import pytest
 import respx
 
+from lgrlw.fetchers.arxiv import ARXIV_QUERY_URL, ArxivFetcher
 from lgrlw.fetchers.crossref import CROSSREF_WORKS_URL, CrossrefFetcher
 from lgrlw.fetchers.errors import FetcherError, FetcherNotFoundError
 
@@ -78,6 +79,46 @@ def test_crossref_fetcher_rejects_invalid_doi() -> None:
         CrossrefFetcher().fetch("not-a-doi")
 
 
+def test_arxiv_fetcher_returns_canonical_metadata(respx_mock: respx.MockRouter) -> None:
+    route = respx_mock.get(ARXIV_QUERY_URL, params={"id_list": "2310.11511"}).mock(
+        return_value=httpx.Response(200, text=_arxiv_feed())
+    )
+
+    metadata = ArxivFetcher().fetch("https://arxiv.org/abs/2310.11511")
+
+    assert route.called
+    assert metadata.title == "Self-RAG"
+    assert metadata.authors == ["Akari Asai", "Zeqiu Wu"]
+    assert metadata.year == 2023
+    assert metadata.venue == "arXiv preprint"
+    assert metadata.arxiv_id == "2310.11511"
+    assert metadata.url == "https://arxiv.org/abs/2310.11511"
+    assert metadata.source == "arxiv"
+
+
+def test_arxiv_fetcher_raises_not_found(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get(ARXIV_QUERY_URL, params={"id_list": "2310.00000"}).mock(
+        return_value=httpx.Response(200, text=_arxiv_empty_feed())
+    )
+
+    with pytest.raises(FetcherNotFoundError):
+        ArxivFetcher().fetch("2310.00000")
+
+
+def test_arxiv_fetcher_rejects_malformed_xml(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get(ARXIV_QUERY_URL, params={"id_list": "2310.11511"}).mock(
+        return_value=httpx.Response(200, text="<feed>")
+    )
+
+    with pytest.raises(FetcherError):
+        ArxivFetcher().fetch("2310.11511")
+
+
+def test_arxiv_fetcher_rejects_invalid_id() -> None:
+    with pytest.raises(FetcherError):
+        ArxivFetcher().fetch("not-an-arxiv-id")
+
+
 def _minimal_message(title: str) -> dict[str, object]:
     return {
         "title": [title],
@@ -85,3 +126,26 @@ def _minimal_message(title: str) -> dict[str, object]:
         "issued": {"date-parts": [[2024]]},
         "container-title": ["ExampleConf"],
     }
+
+
+def _arxiv_feed() -> str:
+    return """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <entry>
+    <id>http://arxiv.org/abs/2310.11511</id>
+    <updated>2023-10-18T00:00:00Z</updated>
+    <published>2023-10-18T00:00:00Z</published>
+    <title>Self-RAG</title>
+    <summary>Example abstract.</summary>
+    <author><name>Akari Asai</name></author>
+    <author><name>Zeqiu Wu</name></author>
+    <arxiv:primary_category term="cs.CL" />
+  </entry>
+</feed>
+"""
+
+
+def _arxiv_empty_feed() -> str:
+    return """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" />
+"""

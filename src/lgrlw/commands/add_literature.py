@@ -1,8 +1,4 @@
-"""``lgrlw add-literature`` -- register a new paper in the KB.
-
-v0.2 supports manual entries and DOI metadata fetching. Networked fetchers
-remain isolated under ``lgrlw.fetchers``.
-"""
+"""``lgrlw add-literature`` -- register a new paper in the KB."""
 
 from __future__ import annotations
 
@@ -15,7 +11,7 @@ import typer
 from rich.console import Console
 from slugify import slugify
 
-from lgrlw.fetchers import CrossrefFetcher, FetcherError
+from lgrlw.fetchers import ArxivFetcher, CrossrefFetcher, FetcherError
 from lgrlw.fs import ensure_dir, write_frontmatter
 from lgrlw.paths import ProjectPaths, resolve_project
 from lgrlw.render.paper_card import render_paper_card
@@ -53,7 +49,7 @@ def add_literature_command(
         str | None,
         typer.Option(
             "--arxiv",
-            help="arXiv id stored as manual metadata. Networked arXiv fetch lands later in v0.2.",
+            help="arXiv id. With --manual, stored as metadata; without --manual, fetched from arXiv.",
         ),
     ] = None,
     url: Annotated[str | None, typer.Option("--url", help="Canonical URL.")] = None,
@@ -82,7 +78,7 @@ def add_literature_command(
     ] = None,
 ) -> None:
     """Add a literature entry to the KB."""
-    mode = _select_mode(manual, doi)
+    mode = _select_mode(manual, doi, arxiv)
     paths = resolve_project(root)
     tags_list = _split_csv(tags or "")
 
@@ -100,26 +96,51 @@ def add_literature_command(
             paper_id=paper_id,
         )
         source_label = "manual"
-    else:
-        _reject_doi_mode_overrides(
-            title=title, authors=authors, year=year, venue=venue, arxiv=arxiv, url=url
+    elif mode == "doi":
+        _reject_fetch_mode_overrides(
+            mode=mode,
+            title=title,
+            authors=authors,
+            year=year,
+            venue=venue,
+            url=url,
         )
         metadata = _fetch_doi_metadata(doi or "")
         fm = _fetched_frontmatter(metadata, status=status, tags=tags_list, paper_id=paper_id)
         source_label = "doi"
+    else:
+        _reject_fetch_mode_overrides(
+            mode=mode,
+            title=title,
+            authors=authors,
+            year=year,
+            venue=venue,
+            url=url,
+        )
+        metadata = _fetch_arxiv_metadata(arxiv or "")
+        fm = _fetched_frontmatter(metadata, status=status, tags=tags_list, paper_id=paper_id)
+        source_label = "arxiv"
 
     _write_literature_entry(paths, fm, force=force, source_label=source_label)
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-def _select_mode(manual: bool, doi: str | None) -> Literal["manual", "doi"]:
+def _select_mode(
+    manual: bool,
+    doi: str | None,
+    arxiv: str | None,
+) -> Literal["manual", "doi", "arxiv"]:
     if manual:
         return "manual"
-    if doi:
+    sources = [name for name, value in (("doi", doi), ("arxiv", arxiv)) if value]
+    if sources == ["doi"]:
         return "doi"
-    console.print("[red]error[/red] provide a literature source: --manual or --doi")
+    if sources == ["arxiv"]:
+        return "arxiv"
+    if len(sources) > 1:
+        console.print("[red]error[/red] provide exactly one network source: --doi or --arxiv")
+        console.print("       use --manual to store multiple identifiers as hand-entered metadata")
+        raise typer.Exit(code=1)
+    console.print("[red]error[/red] provide a literature source: --manual, --doi, or --arxiv")
     raise typer.Exit(code=1)
 
 
@@ -172,13 +193,13 @@ def _manual_frontmatter(
         raise typer.Exit(code=1) from exc
 
 
-def _reject_doi_mode_overrides(
+def _reject_fetch_mode_overrides(
     *,
+    mode: Literal["doi", "arxiv"],
     title: str,
     authors: str,
     year: int,
     venue: str | None,
-    arxiv: str | None,
     url: str | None,
 ) -> None:
     provided = []
@@ -190,13 +211,11 @@ def _reject_doi_mode_overrides(
         provided.append("--year")
     if venue is not None:
         provided.append("--venue")
-    if arxiv is not None:
-        provided.append("--arxiv")
     if url is not None:
         provided.append("--url")
     if provided:
         console.print(
-            "[red]error[/red] --doi fetch mode does not accept "
+            f"[red]error[/red] --{mode} fetch mode does not accept "
             f"{', '.join(provided)}; use --manual for hand-entered metadata"
         )
         raise typer.Exit(code=1)
@@ -208,6 +227,17 @@ def _fetch_doi_metadata(doi: str) -> PaperMetadata:
         return fetcher.fetch(doi)
     except FetcherError as exc:
         console.print(f"[red]error[/red] DOI fetch failed: {exc}")
+        raise typer.Exit(code=1) from exc
+    finally:
+        fetcher.close()
+
+
+def _fetch_arxiv_metadata(arxiv: str) -> PaperMetadata:
+    fetcher = ArxivFetcher()
+    try:
+        return fetcher.fetch(arxiv)
+    except FetcherError as exc:
+        console.print(f"[red]error[/red] arXiv fetch failed: {exc}")
         raise typer.Exit(code=1) from exc
     finally:
         fetcher.close()

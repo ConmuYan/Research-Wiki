@@ -82,14 +82,23 @@ lgrlw add-literature --doi <doi> \
   [--id <slug>] [--force] [--root <project-root>]
 ```
 
+arXiv-backed entry via the arXiv Atom API:
+
+```
+lgrlw add-literature --arxiv <arxiv-id-or-url> \
+  [--status published|accepted|preprint] \
+  [--tags "tag1,tag2"] \
+  [--id <slug>] [--force] [--root <project-root>]
+```
+
 | Option | Meaning |
 |---|---|
-| `--manual` | Create a hand-entered record. With `--manual`, `--doi` is stored as metadata and does not trigger network fetch. |
+| `--manual` | Create a hand-entered record. With `--manual`, `--doi` / `--arxiv` are stored as metadata and do not trigger a network fetch. |
 | `--doi` | Without `--manual`, fetch metadata from Crossref for the DOI. With `--manual`, store the DOI on the hand-entered record. |
-| `--title` / `--authors` / `--year` | Mandatory for manual; rejected in DOI fetch mode. |
-| `--venue` | Free-form for manual entries (e.g. "ICLR 2024", "arXiv preprint"); rejected in DOI fetch mode. |
-| `--arxiv` | Manual metadata only; networked arXiv fetch lands later in v0.2. |
-| `--url` | Canonical URL for manual entries; rejected in DOI fetch mode. |
+| `--arxiv` | Without `--manual`, fetch metadata from the arXiv Atom API for the given id or abs URL. With `--manual`, store the arXiv id on the hand-entered record. `--doi` and `--arxiv` are mutually exclusive outside manual mode. |
+| `--title` / `--authors` / `--year` | Mandatory for manual; rejected in DOI/arXiv fetch modes. |
+| `--venue` | Free-form for manual entries (e.g. "ICLR 2024", "arXiv preprint"); rejected in DOI/arXiv fetch modes. |
+| `--url` | Canonical URL for manual entries; rejected in DOI/arXiv fetch modes. |
 | `--status` | One of `published` / `accepted` / `preprint`. |
 | `--tags` | Comma-separated tags. |
 | `--id` | Override the auto-generated slug. |

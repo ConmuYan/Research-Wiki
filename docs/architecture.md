@@ -54,6 +54,7 @@ src/lgrlw/
   fetchers/            # v0.2 networked metadata fetchers
     base.py
     crossref.py
+    arxiv.py
     errors.py
   lint/               # one rule family per file
     structure.py

@@ -14,6 +14,10 @@ and this project uses semantic versioning.
   tests.
 - `lgrlw add-literature --doi` Crossref ingestion path with CLI-level
   mocked tests.
+- `ArxivFetcher` using the arXiv Atom API, plus
+  `lgrlw add-literature --arxiv` ingestion path with CLI-level mocked
+  tests. `--manual --arxiv` still stores the id as hand-entered metadata
+  without performing a network call.
 
 ### Changed
 
