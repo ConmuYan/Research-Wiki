@@ -402,6 +402,7 @@ def _write_literature_entry(
     meta_path.write_text(
         json.dumps(frontmatter_dict, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
 
     action = "replace" if force and paper_exists else "add"
@@ -422,10 +423,10 @@ def _append_log(paths: ProjectPaths, message: str) -> None:
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     entry = f"- {timestamp}  {message}\n"
     if log.is_file():
-        with log.open("a", encoding="utf-8") as f:
+        with log.open("a", encoding="utf-8", newline="\n") as f:
             f.write(entry)
     else:
-        log.write_text(f"# KB Log\n\n{entry}", encoding="utf-8")
+        log.write_text(f"# KB Log\n\n{entry}", encoding="utf-8", newline="\n")
 
 
 __all__ = ["add_literature_command"]

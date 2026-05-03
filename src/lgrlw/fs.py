@@ -98,7 +98,14 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any] | None, str]:  # noqa: 
 
 
 def write_frontmatter(path: Path, data: dict[str, Any], body: str) -> None:
-    """Write ``data`` as YAML frontmatter followed by ``body`` to ``path``."""
+    """Write ``data`` as YAML frontmatter followed by ``body`` to ``path``.
+
+    Always writes with LF line endings (``newline="\\n"``) regardless of the
+    host OS, so that SHA-256 hashes recorded in export-pack manifests stay
+    stable across Windows and Linux. Without this, Python on Windows would
+    translate each ``\\n`` into ``\\r\\n`` at write time, and any reader on
+    a Linux CI (where git stores LF) would re-compute a different digest.
+    """
     yaml_block = yaml.safe_dump(
         data,
         sort_keys=False,
@@ -111,7 +118,7 @@ def write_frontmatter(path: Path, data: dict[str, Any], body: str) -> None:
         content += "\n" + body_clean
         if not content.endswith("\n"):
             content += "\n"
-    path.write_text(content, encoding="utf-8")
+    path.write_text(content, encoding="utf-8", newline="\n")
 
 
 __all__ = [

@@ -291,10 +291,18 @@ def _write_atomically(
         write_frontmatter(targets["paper"], artefacts["frontmatter"], artefacts["body"])  # type: ignore[arg-type]
         written.append(targets["paper"])
 
-        targets["metadata"].write_text(artefacts["metadata_json"], encoding="utf-8")  # type: ignore[arg-type]
+        targets["metadata"].write_text(
+            artefacts["metadata_json"],  # type: ignore[arg-type]
+            encoding="utf-8",
+            newline="\n",
+        )
         written.append(targets["metadata"])
 
-        targets["bibtex"].write_text(artefacts["bibtex"], encoding="utf-8")  # type: ignore[arg-type]
+        targets["bibtex"].write_text(
+            artefacts["bibtex"],  # type: ignore[arg-type]
+            encoding="utf-8",
+            newline="\n",
+        )
         written.append(targets["bibtex"])
 
         # The log append is the commit step; if it raises, roll back the
@@ -311,10 +319,10 @@ def _append_log(path: Path, paper_id: str, workspace_id: str, moment: datetime) 
     timestamp = moment.strftime("%Y-%m-%dT%H:%M:%SZ")
     entry = f"- {timestamp}  promote workspace={workspace_id} id={paper_id}\n"
     if path.is_file():
-        with path.open("a", encoding="utf-8") as f:
+        with path.open("a", encoding="utf-8", newline="\n") as f:
             f.write(entry)
     else:
-        path.write_text(f"# KB Log\n\n{entry}", encoding="utf-8")
+        path.write_text(f"# KB Log\n\n{entry}", encoding="utf-8", newline="\n")
 
 
 # ---------------------------------------------------------------------------

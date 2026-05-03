@@ -106,9 +106,13 @@ def build_export_pack(
         paper_ids=sorted(paper_ids),
         files=files,
     )
+    # Always write with LF so the manifest itself, and by extension the
+    # SHA-256 digests it records for sibling pack files, stay identical on
+    # Windows and Linux. See fs.write_frontmatter for the broader rationale.
     (pack_dir / MANIFEST_NAME).write_text(
         json.dumps(manifest.model_dump(mode="json"), indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
 
     # ------------------------------------------------------------------

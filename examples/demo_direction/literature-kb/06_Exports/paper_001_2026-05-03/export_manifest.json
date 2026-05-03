@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0.0",
-  "tool_version": "0.1.0",
+  "tool_version": "0.2.0",
   "workspace_id": "paper_001",
-  "exported_at": "2026-05-02T09:55:16Z",
+  "exported_at": "2026-05-03T12:22:39Z",
   "kb_root_relative": "literature-kb",
-  "pack_dir_relative": "literature-kb/06_Exports/paper_001_2026-05-02",
+  "pack_dir_relative": "literature-kb/06_Exports/paper_001_2026-05-03",
   "paper_ids": [
     "asai-2023-self-rag-learning-to-retrieve-generate-and-critiqu",
     "karpukhin-2020-dense-passage-retrieval-for-open-domain-quest",
@@ -12,9 +12,9 @@
   ],
   "files": {
     "02_Literature/Papers/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "02_Literature/Papers/asai-2023-self-rag-learning-to-retrieve-generate-and-critiqu.md": "436006739067fe0b7e0f323ab8728d95850cb67f3f87508620b7bc01408ca08e",
-    "02_Literature/Papers/karpukhin-2020-dense-passage-retrieval-for-open-domain-quest.md": "39aa8c3fccdbc31aff8d1694e9a1bca0692730111f95c458a0ee2fd96568beb3",
-    "02_Literature/Papers/lewis-2020-retrieval-augmented-generation-for-knowledge-inte.md": "24e835c3935298311e539672e9c34995a897a7d62856d86a7a49dcec4129d29f",
+    "02_Literature/Papers/asai-2023-self-rag-learning-to-retrieve-generate-and-critiqu.md": "8130deacb53b82acee6db3f14864563d9ea6e16b02fa817e1be2ef9305b8db17",
+    "02_Literature/Papers/karpukhin-2020-dense-passage-retrieval-for-open-domain-quest.md": "5269b4e675f8586878bd26679e755a4e7f055a12af95b4855b8083bd01eb7b94",
+    "02_Literature/Papers/lewis-2020-retrieval-augmented-generation-for-knowledge-inte.md": "69a02017df27e225deae39f09357cd4b1bb256be3a7d7c793b44eb834973d79c",
     "03_Field_Structure/Dataset_Benchmark_Map.md": "1a36ce41bdfe35e90ce100fdecf56f113f6276f4c4d69de045e913d21381ae7f",
     "03_Field_Structure/Method_Taxonomy.md": "8856dfa498ae5fde5a03920d485228c031226af6fb239b7a7e068eeec767aabc",
     "03_Field_Structure/Metric_Map.md": "acda20c51978a3aff3b4076e50e1271289a0c707ec8a3d09b5c66d09796abbb5",

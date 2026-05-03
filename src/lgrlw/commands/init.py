@@ -69,6 +69,7 @@ def init_command(
             "# research-workspaces/\n\n"
             'Create a new workspace with `lgrlw new-workspace <id> --title "..."`.\n'
             "See `docs/boundary-rules.md` for what may (and may not) live here.\n",
+            newline="\n",
             encoding="utf-8",
         )
 

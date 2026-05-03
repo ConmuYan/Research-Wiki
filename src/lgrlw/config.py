@@ -38,7 +38,7 @@ def dump_config(cfg: ProjectConfig, path: Path) -> None:
         f'workspaces_name  = "{_escape(cfg.workspaces_name)}"',
         "",
     ]
-    path.write_text("\n".join(lines), encoding="utf-8")
+    path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
 def _escape(value: str) -> str:

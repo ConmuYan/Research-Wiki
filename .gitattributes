@@ -1,0 +1,31 @@
+# Research-Wiki EOL policy.
+#
+# Research-Wiki ships immutable, hash-verified KB export packs: every file
+# inside `literature-kb/06_Exports/<pack>/` has its SHA-256 recorded in the
+# sibling `export_manifest.json`, and `lgrlw lint` rejects the whole project
+# if any byte has changed since the pack was written.
+#
+# Strategy: force LF everywhere -- including working trees on Windows.
+# Combined with the `newline="\n"` guards in every `write_text` call under
+# `src/lgrlw/` (see fs.py::write_frontmatter for the rationale), this makes
+# export pack bytes identical across every OS after a git round trip, so
+# the manifest's SHA-256 digests survive check-out on ubuntu-latest and
+# windows-latest alike.
+
+* text=auto eol=lf
+
+# Explicit text file kinds (all LF). Keep these *after* the `* text=auto`
+# line above so later attributes win.
+*.py      text eol=lf
+*.md      text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.toml    text eol=lf
+*.json    text eol=lf
+*.bib     text eol=lf
+
+# Binary assets (extend as needed).
+*.png     binary
+*.jpg     binary
+*.pdf     binary
+*.ico     binary
