@@ -7,6 +7,7 @@ from lgrlw.fetchers.base import BaseFetcher
 from lgrlw.fetchers.crossref import CrossrefFetcher
 from lgrlw.fetchers.errors import FetcherError, FetcherNotFoundError
 from lgrlw.fetchers.openalex import OpenAlexFetcher
+from lgrlw.fetchers.semanticscholar import SemanticScholarFetcher
 
 __all__ = [
     "ArxivFetcher",
@@ -15,4 +16,5 @@ __all__ = [
     "FetcherError",
     "FetcherNotFoundError",
     "OpenAlexFetcher",
+    "SemanticScholarFetcher",
 ]

@@ -11,12 +11,10 @@ $ lgrlw --help
 |---|---|
 | [`lgrlw init`](#lgrlw-init) | Bootstrap a new Research-Wiki project. |
 | [`lgrlw new-workspace`](#lgrlw-new-workspace) | Create a workspace (paper or idea). |
-| [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual`, `--doi`, `--arxiv`, or `--openalex`). |
+| [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual`, `--doi`, `--arxiv`, `--openalex`, or `--ss`). |
 | [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
 | [`lgrlw promote`](#lgrlw-promote) | Promote an accepted workspace paper into the KB. |
 | [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
-
-Planned for later v0.2 work: `add-literature --ss`.
 
 ---
 
@@ -68,7 +66,7 @@ lgrlw add-literature --manual \
   --title "<title>" \
   --authors "<First Last, Another Name, ...>" \
   --year <yyyy> \
-  [--venue "..."] [--doi ...] [--arxiv ...] [--url ...] \
+  [--venue "..."] [--doi ...] [--arxiv ...] [--openalex ...] [--ss ...] [--url ...] \
   [--status published|accepted|preprint] \
   [--tags "tag1,tag2"] \
   [--id <slug>] [--force] [--root <project-root>]
@@ -101,15 +99,37 @@ lgrlw add-literature --openalex <openalex-id-or-url> \
   [--id <slug>] [--force] [--root <project-root>]
 ```
 
+Semantic Scholar-backed entry via the S2 Graph API:
+
+```
+lgrlw add-literature --ss <s2-id-or-url-or-alias> \
+  [--status published|accepted|preprint] \
+  [--tags "tag1,tag2"] \
+  [--id <slug>] [--force] [--root <project-root>]
+```
+
+The `--ss` value can be any of:
+
+- a canonical 40-char Semantic Scholar `paperId` (lowercase hex);
+- a Semantic Scholar paper URL, e.g.
+  `https://www.semanticscholar.org/paper/Self-Rag/649def34f8be52c8b66281af98ae884c09aef38b`;
+- an S2 prefixed alias such as `DOI:10.xxxx/yyyy`, `ARXIV:2310.11511`,
+  `CorpusId:263336427`, `MAG:...`, `ACL:...`, `PMID:...`, `URL:...`;
+- a bare DOI or arXiv id (auto-wrapped to `DOI:` / `ARXIV:`).
+
+The fetcher always stores the canonical 40-hex `paperId` returned by the
+API in `semantic_scholar_id`.
+
 | Option | Meaning |
 |---|---|
-| `--manual` | Create a hand-entered record. With `--manual`, `--doi` / `--arxiv` / `--openalex` are stored as metadata and do not trigger a network fetch. |
+| `--manual` | Create a hand-entered record. With `--manual`, `--doi` / `--arxiv` / `--openalex` / `--ss` are stored as metadata and do not trigger a network fetch. |
 | `--doi` | Without `--manual`, fetch metadata from Crossref for the DOI. With `--manual`, store the DOI on the hand-entered record. |
 | `--arxiv` | Without `--manual`, fetch metadata from the arXiv Atom API for the given id or abs URL. With `--manual`, store the arXiv id on the hand-entered record. |
-| `--openalex` | Without `--manual`, fetch metadata from the OpenAlex Works endpoint for the given Work id (e.g. `W4385545131`) or `https://openalex.org/W…` URL. With `--manual`, store the OpenAlex id on the hand-entered record. `--doi`, `--arxiv`, and `--openalex` are mutually exclusive outside manual mode. |
-| `--title` / `--authors` / `--year` | Mandatory for manual; rejected in DOI/arXiv/OpenAlex fetch modes. |
-| `--venue` | Free-form for manual entries (e.g. "ICLR 2024", "arXiv preprint"); rejected in DOI/arXiv/OpenAlex fetch modes. |
-| `--url` | Canonical URL for manual entries; rejected in DOI/arXiv/OpenAlex fetch modes. |
+| `--openalex` | Without `--manual`, fetch metadata from the OpenAlex Works endpoint for the given Work id (e.g. `W4385545131`) or `https://openalex.org/W…` URL. With `--manual`, store the OpenAlex id on the hand-entered record. |
+| `--ss` | Without `--manual`, fetch metadata from the Semantic Scholar Graph API. With `--manual`, store the 40-hex `paperId` on the hand-entered record (manual mode enforces the 40-hex format; prefixed aliases are only accepted by the fetch path). `--doi`, `--arxiv`, `--openalex`, and `--ss` are mutually exclusive outside manual mode. |
+| `--title` / `--authors` / `--year` | Mandatory for manual; rejected in DOI/arXiv/OpenAlex/SS fetch modes. |
+| `--venue` | Free-form for manual entries (e.g. "ICLR 2024", "arXiv preprint"); rejected in DOI/arXiv/OpenAlex/SS fetch modes. |
+| `--url` | Canonical URL for manual entries; rejected in DOI/arXiv/OpenAlex/SS fetch modes. |
 | `--status` | One of `published` / `accepted` / `preprint`. |
 | `--tags` | Comma-separated tags. |
 | `--id` | Override the auto-generated slug. |
@@ -222,4 +242,4 @@ Networked ingestion honours each source's polite-pool / authentication conventio
 
 - `CROSSREF_MAILTO` &mdash; contact email forwarded to Crossref's polite pool when `--doi` is used.
 - `OPENALEX_EMAIL` &mdash; contact email forwarded to OpenAlex's polite pool when `--openalex` is used.
-- `S2_API_KEY` &mdash; Semantic Scholar API key (consumed by `add-literature --ss` once it ships).
+- `S2_API_KEY` &mdash; Semantic Scholar API key sent in the `x-api-key` header when `--ss` is used. Recommended to avoid HTTP 429 rate limits. Never printed in CLI output.

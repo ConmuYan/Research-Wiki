@@ -22,7 +22,7 @@ Strict separation between *public literature* and *unpublished research*, with a
 
 ---
 
-> **Current status &mdash; v0.1 MVP.** This release ships the three-space scaffold, five core CLI commands (`init`, `new-workspace`, `add-literature --manual`, `export-pack`, `lint`), the full boundary invariant, and dated export snapshots with SHA-256 manifests. **Networked metadata fetchers** (`--arxiv` / `--doi` / `--ss`), **PDF &rarr; Markdown conversion**, and the **promotion ceremony** (`lgrlw promote`) are specified in `docs/` but ship in v0.2+. See the [Roadmap](#roadmap).
+> **Current status &mdash; v0.2 in development on `develop/v0.2`.** v0.1 shipped the three-space scaffold, the base CLI (`init`, `new-workspace`, `add-literature --manual`, `export-pack`, `lint`), the full boundary invariant, and dated export snapshots with SHA-256 manifests. **v0.2 adds four networked metadata fetchers** (`--doi` via Crossref, `--arxiv` via the arXiv Atom API, `--openalex` via the OpenAlex Works API, `--ss` via the Semantic Scholar Graph API), plus the **promotion ceremony** (`lgrlw promote`) that atomically lifts an accepted workspace paper into the KB with paper card + metadata + BibTeX. **PDF &rarr; Markdown conversion** is still a `Later` roadmap item. See the [Roadmap](#roadmap).
 
 ---
 
@@ -128,9 +128,9 @@ Every stage has an explicit directory location, a set of allowed artifacts, and 
 - **Boundary as code, not convention.** `lgrlw lint` fails CI when your workspace accidentally writes into the KB, when a paper frontmatter claims `status: accepted` without a DOI/arXiv/venue, or when an export pack's manifest diverges from its contents.
 - **Agent-first design.** Each space ships with an [`AGENTS.md`](./templates/literature-kb/00_System/KB_AGENTS.md) *constitution* that LLM agents (Claude Code, Cursor, Windsurf, Aider) read and obey. See [`docs/agents-guide.md`](./docs/agents-guide.md).
 - **Dated, immutable export packs.** Every paper draft is grounded in a specific KB snapshot (`06_Exports/paper_XXX_YYYY-MM-DD/`) with a signed manifest, so your related-work section is reproducible from the KB state at writing time — even after the KB keeps growing.
-- **Promotion is a ceremony, not a copy** *(protocol specified; `lgrlw promote` lands in v0.2)*. Promotion requires final metadata, a camera-ready artifact, and regenerates Field Structure / Evidence Map / Method Taxonomy entries from the accepted contribution — turning your own accepted work into first-class literature of the field.
+- **Promotion is a ceremony, not a copy.** `lgrlw promote` (v0.2) validates `paper_status: accepted`, final title / authors / venue / year, at least one of DOI / arXiv, a camera-ready artifact in `06_Promotion/final_metadata.md`, and a fully-ticked `06_Promotion/promotion_checklist.md`; then it atomically emits a paper card (`source: promoted`), a metadata snapshot, a BibTeX entry, and an audit log line. The Field Structure / Evidence Map / Method Taxonomy updates listed in `06_Promotion/add_back_to_kb_plan.md` remain a manual follow-up, deliberately, so a human makes the taxonomy call.
 - **Works offline, local-first, Obsidian-compatible.** Pure Markdown + YAML frontmatter. Your knowledge does not live in someone else's SaaS.
-- **Small, typed, tested core.** Python 3.10+, pydantic v2, Typer. No database. No lock-in. `httpx` only appears in v0.2 when networked fetchers land.
+- **Small, typed, tested core.** Python 3.10+, pydantic v2, Typer, and `httpx` (used only by the four networked fetchers, each covered by `respx`-mocked tests). No database. No lock-in.
 
 ---
 
@@ -167,9 +167,9 @@ my-research/
 └── .lgrlw.toml             # project config
 ```
 
-### Add a paper to the KB (v0.1: manual entry)
+### Add a paper to the KB
 
-> Networked fetchers (`--arxiv`, `--doi`, `--ss`) are scheduled for v0.2. The MVP accepts a fully-typed manual entry — identifiers like `--arxiv 2310.11511` are recorded as *metadata*, not fetched from the network.
+Manual entry (any version):
 
 ```bash
 lgrlw add-literature --manual \
@@ -181,7 +181,23 @@ lgrlw add-literature --manual \
   --tags "rag,llm,retrieval"
 ```
 
-Output: a paper card at `literature-kb/02_Literature/Papers/<slug>.md` and a JSON metadata snapshot in `literature-kb/01_Raw/metadata/<slug>.json`. BibTeX export ships together with fetchers in v0.2.
+Networked ingestion (v0.2, mutually exclusive per invocation):
+
+```bash
+# Crossref (DOI)
+lgrlw add-literature --doi 10.48550/arxiv.2310.11511
+
+# arXiv Atom API
+lgrlw add-literature --arxiv 2310.11511
+
+# OpenAlex Works
+lgrlw add-literature --openalex W4385545131
+
+# Semantic Scholar Graph API (paperId, DOI:, ARXIV:, CorpusId:, or S2 URL all accepted)
+lgrlw add-literature --ss 649def34f8be52c8b66281af98ae884c09aef38b
+```
+
+Output: a paper card at `literature-kb/02_Literature/Papers/<slug>.md` and a JSON metadata snapshot in `literature-kb/01_Raw/metadata/<slug>.json`. The polite-pool environment variables `CROSSREF_MAILTO`, `OPENALEX_EMAIL`, and `S2_API_KEY` are honoured when set. Auto-generated BibTeX ships together with `lgrlw promote` (not `add-literature`) in v0.2.
 
 ### Start a paper workspace
 
@@ -207,11 +223,22 @@ lgrlw lint
 # ✓ every accepted paper has final metadata
 ```
 
-### After acceptance (planned, v0.2)
+### After acceptance (v0.2)
 
-`lgrlw promote <workspace>` will validate `paper_status = accepted`, final title/authors/venue/year, DOI or arXiv, and the camera-ready artifact; then emit a new Paper page, Claim entries, and taxonomy updates into `literature-kb/`, logging the ceremony in `00_System/log.md`. The v0.1 MVP ships the ceremony specification ([`docs/promotion-protocol.md`](./docs/promotion-protocol.md)) but not the command.
+```bash
+lgrlw promote paper_001
+```
 
-See [`docs/cli-reference.md`](./docs/cli-reference.md) for every command that *is* available in v0.1.
+Once your workspace's `00_Project/paper_status.md` has `status: accepted`, full final metadata, and a ticked `06_Promotion/promotion_checklist.md`, `lgrlw promote` atomically writes:
+
+- a paper card at `literature-kb/02_Literature/Papers/<id>.md` with `source: promoted`;
+- a metadata snapshot at `literature-kb/01_Raw/metadata/<id>.json`;
+- an auto-generated BibTeX entry at `literature-kb/01_Raw/bibtex/<id>.bib` (`@inproceedings` when `venue` is set, `@misc` otherwise);
+- an audit line in `literature-kb/00_System/log.md`.
+
+The full protocol — preconditions, error messages, and which taxonomy edits remain manual follow-ups — lives in [`docs/promotion-protocol.md`](./docs/promotion-protocol.md).
+
+See [`docs/cli-reference.md`](./docs/cli-reference.md) for every command.
 
 ---
 
@@ -270,12 +297,12 @@ Every other write — ideas, hypotheses, experiment logs, draft claims, rebuttal
 - [x] Dated, immutable export packs with SHA-256 manifest
 - [x] Worked `examples/demo_direction/` that `lint` + `export-pack` cleanly
 
-**v0.2 — planned**
+**v0.2 — in development on `develop/v0.2`**
 
-- [ ] `lgrlw promote` acceptance ceremony (spec already in `docs/promotion-protocol.md`)
-- [ ] Networked fetchers under `lgrlw.fetchers`: arXiv, OpenAlex, Crossref, Semantic Scholar
-- [ ] `add-literature --arxiv / --doi / --ss` with `respx`-mocked tests
-- [ ] BibTeX export alongside paper cards
+- [x] Networked fetchers under `lgrlw.fetchers`: Crossref (`--doi`), arXiv (`--arxiv`), OpenAlex (`--openalex`), Semantic Scholar (`--ss`), each with `respx`-mocked tests and a polite-pool environment variable
+- [x] `lgrlw promote` acceptance ceremony (atomic paper card + metadata + BibTeX + log line; preconditions enforced per [`docs/promotion-protocol.md`](./docs/promotion-protocol.md))
+- [x] Auto-generated BibTeX on promotion (`@inproceedings` / `@misc`)
+- [ ] Final README / translation pass and v0.2.0 tag
 
 **Later**
 

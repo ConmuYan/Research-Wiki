@@ -22,7 +22,7 @@
 
 ---
 
-> **当前状态 — v0.1 MVP。** 本版本提供三空间脚手架、五个核心 CLI 命令（`init`、`new-workspace`、`add-literature --manual`、`export-pack`、`lint`）、完整的边界不变量，以及带 SHA-256 manifest 的导出快照。**网络 fetcher**（`--arxiv` / `--doi` / `--ss`）、**PDF → Markdown 转换**、**Promotion 仪式**（`lgrlw promote`）已在 `docs/` 中定义，但计划 v0.2+ 才实现。见 [路线图](#路线图)。
+> **当前状态 — v0.2 开发中（`develop/v0.2` 分支）。** v0.1 已交付三空间脚手架、基础 CLI（`init`、`new-workspace`、`add-literature --manual`、`export-pack`、`lint`）、完整边界不变量，以及带 SHA-256 manifest 的导出快照。**v0.2 新增四条网络 fetcher**（`--doi` 走 Crossref、`--arxiv` 走 arXiv Atom、`--openalex` 走 OpenAlex Works、`--ss` 走 Semantic Scholar Graph API），以及 **Promotion 仪式**（`lgrlw promote`）：原子化地把已接收工作区论文以 paper card + metadata + BibTeX 一次性回流到 KB。**PDF → Markdown 转换** 仍在 `后续` 路线图里。见 [路线图](#路线图)。
 
 ---
 
@@ -128,9 +128,9 @@ stateDiagram-v2
 - **边界即代码，不是自觉。** `lgrlw lint` 会在 workspace 意外写入 KB、`status: accepted` 却没有 DOI/arXiv/venue、或者 export 包的 manifest 与实际内容不一致时直接让 CI 失败。
 - **Agent-first 设计。** 每个空间都自带一份 [`AGENTS.md`](./templates/literature-kb/00_System/KB_AGENTS.md) *宪法*，供 LLM agent（Claude Code / Cursor / Windsurf / Aider）读取并遵守。详见 [`docs/agents-guide.md`](./docs/agents-guide.md)。
 - **带日期的不可变 export pack。** 每份论文草稿都锚定在一个具体的 KB snapshot（`06_Exports/paper_XXX_YYYY-MM-DD/`）上，含签名 manifest，让你的 Related Work 在 KB 持续扩展之后依然可复现。
-- **Promotion 是一次仪式，不只是复制**（协议已定义；`lgrlw promote` 在 v0.2 实现）。Promotion 强制要求最终元数据、camera-ready 产物，并基于被接收的贡献重新生成 Field Structure / Evidence Map / Method Taxonomy 条目 —— 把你自己的论文变成领域的一等公民文献。
+- **Promotion 是一次仪式，不只是复制。** `lgrlw promote`（v0.2）校验 `paper_status: accepted`、最终 title/authors/venue/year、至少一个 DOI/arXiv、`06_Promotion/final_metadata.md` 中的 camera-ready 产物，以及 `06_Promotion/promotion_checklist.md` 全部打勾；通过后原子化地产出带 `source: promoted` 的 paper card、metadata 快照、BibTeX 条目与审计 log。`06_Promotion/add_back_to_kb_plan.md` 里列的 Field Structure / Evidence Map / Method Taxonomy 改动仍由你手动后续 commit —— 有意保留给人来做分类决策。
 - **离线、本地优先、Obsidian 兼容。** 纯 Markdown + YAML frontmatter。你的知识不会住在别人的 SaaS 上。
-- **小而类型化、带测试的核心。** Python 3.10+、pydantic v2、Typer。没有数据库，没有 lock-in。`httpx` 仅在 v0.2 引入（网络 fetcher 落地时）。
+- **小而类型化、带测试的核心。** Python 3.10+、pydantic v2、Typer，以及 `httpx`（仅在四条网络 fetcher 里使用，每条都有 `respx` mock 测试）。没有数据库，没有 lock-in。
 
 ---
 
@@ -167,9 +167,9 @@ my-research/
 └── .lgrlw.toml             # 项目配置
 ```
 
-### 添加一篇文献到 KB（v0.1：仅手录）
+### 添加一篇文献到 KB
 
-> `--arxiv` / `--doi` / `--ss` 的网络抓取计划 v0.2 交付。MVP 仅接受全字段的手录；`--arxiv 2310.11511` 类标识符在 v0.1 仅作为元数据字段记录，不会联网。
+手录（任何版本都支持）：
 
 ```bash
 lgrlw add-literature --manual \
@@ -181,7 +181,23 @@ lgrlw add-literature --manual \
   --tags "rag,llm,retrieval"
 ```
 
-产物：`literature-kb/02_Literature/Papers/<slug>.md` 论文卡，以及 `literature-kb/01_Raw/metadata/<slug>.json` 元数据快照。BibTeX 导出会随 fetcher 一同在 v0.2 提供。
+联网抓取（v0.2，每次只能选一条网络源）：
+
+```bash
+# Crossref (DOI)
+lgrlw add-literature --doi 10.48550/arxiv.2310.11511
+
+# arXiv Atom API
+lgrlw add-literature --arxiv 2310.11511
+
+# OpenAlex Works
+lgrlw add-literature --openalex W4385545131
+
+# Semantic Scholar Graph API（40-hex paperId / DOI: / ARXIV: / CorpusId: / S2 URL 都可）
+lgrlw add-literature --ss 649def34f8be52c8b66281af98ae884c09aef38b
+```
+
+产物：`literature-kb/02_Literature/Papers/<slug>.md` 论文卡，以及 `literature-kb/01_Raw/metadata/<slug>.json` 元数据快照。设置 `CROSSREF_MAILTO` / `OPENALEX_EMAIL` / `S2_API_KEY` 环境变量可使用各源的礼貌池或鉴权配额。BibTeX 自动生成随 `lgrlw promote`（不是 `add-literature`）一起在 v0.2 落地。
 
 ### 新建一个论文工作区
 
@@ -207,11 +223,22 @@ lgrlw lint
 # ✓ 每篇 accepted paper 都有完整最终元数据
 ```
 
-### 接收后回流（计划，v0.2）
+### 接收后回流（v0.2）
 
-`lgrlw promote <workspace>` 将校验 `paper_status = accepted`、最终 title/authors/venue/year、DOI 或 arXiv、camera-ready 产物；通过后生成新的 Paper 页面、Claim 条目和 taxonomy 更新，并在 `00_System/log.md` 写入 promotion 记录。v0.1 MVP 仅提供仪式规范（[`docs/promotion-protocol.md`](./docs/promotion-protocol.md)），不提供命令。
+```bash
+lgrlw promote paper_001
+```
 
-v0.1 已有命令的完整说明见 [`docs/cli-reference.md`](./docs/cli-reference.md)。
+当工作区 `00_Project/paper_status.md` 设为 `status: accepted` 且填完最终元数据，`06_Promotion/promotion_checklist.md` 全部打勾后，`lgrlw promote` 会原子化地写入：
+
+- `literature-kb/02_Literature/Papers/<id>.md` 论文卡（`source: promoted`）；
+- `literature-kb/01_Raw/metadata/<id>.json` 元数据快照；
+- `literature-kb/01_Raw/bibtex/<id>.bib` 自动 BibTeX（有 venue 时是 `@inproceedings`，否则 `@misc`）；
+- `literature-kb/00_System/log.md` 追加一条审计记录。
+
+完整协议（所有前置条件、错误消息、以及哪些 taxonomy 编辑仍需你手动后续提交）见 [`docs/promotion-protocol.md`](./docs/promotion-protocol.md)。
+
+所有命令的完整说明见 [`docs/cli-reference.md`](./docs/cli-reference.md)。
 
 ---
 
@@ -270,12 +297,12 @@ research-wiki/
 - [x] 带 SHA-256 manifest 的不可变 export pack
 - [x] 可直接 lint / export-pack 的 `examples/demo_direction/`
 
-**v0.2 — 计划中**
+**v0.2 — 开发中（`develop/v0.2` 分支）**
 
-- [ ] `lgrlw promote` 接收仪式（规范已在 `docs/promotion-protocol.md`）
-- [ ] `lgrlw.fetchers` 下的网络 fetcher：arXiv、OpenAlex、Crossref、Semantic Scholar
-- [ ] `add-literature --arxiv / --doi / --ss`，带 `respx` mock 测试
-- [ ] BibTeX 与论文卡并行导出
+- [x] `lgrlw.fetchers` 下的四条网络 fetcher：Crossref (`--doi`)、arXiv (`--arxiv`)、OpenAlex (`--openalex`)、Semantic Scholar (`--ss`)，每条都有 `respx` mock 测试与对应的礼貌池环境变量
+- [x] `lgrlw promote` 接收仪式（原子化 paper card + metadata + BibTeX + log 写入；前置条件按 [`docs/promotion-protocol.md`](./docs/promotion-protocol.md) 强制校验）
+- [x] Promotion 自动 BibTeX 生成（`@inproceedings` / `@misc`）
+- [ ] 完成 README / 翻译收尾与 v0.2.0 tag
 
 **后续**
 

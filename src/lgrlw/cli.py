@@ -4,7 +4,7 @@ The CLI is intentionally small:
 
 * ``lgrlw init``              - scaffold a new project
 * ``lgrlw new-workspace``     - create a paper/idea workspace
-* ``lgrlw add-literature``    - register a manual / DOI / arXiv / OpenAlex literature entry
+* ``lgrlw add-literature``    - register a manual / DOI / arXiv / OpenAlex / S2 literature entry
 * ``lgrlw export-pack``       - snapshot the KB for a workspace
 * ``lgrlw promote``           - promote an accepted workspace paper into the KB
 * ``lgrlw lint``              - verify the three-space invariants
@@ -36,7 +36,8 @@ app = typer.Typer(
     name="lgrlw",
     help=(
         "Research-Wiki - Literature-Grounded Research Lifecycle Wiki. "
-        f"v{__version__} (init / new-workspace / add-literature / export-pack / promote / lint)."
+        f"v{__version__} (init / new-workspace / add-literature / export-pack / promote / lint). "
+        "add-literature supports --manual / --doi / --arxiv / --openalex / --ss."
     ),
     no_args_is_help=True,
     add_completion=False,
@@ -51,7 +52,7 @@ app.command(
 )(new_workspace_command)
 app.command(
     "add-literature",
-    help="Register a paper in the KB (--manual / --doi / --arxiv / --openalex).",
+    help="Register a paper in the KB (--manual / --doi / --arxiv / --openalex / --ss).",
 )(add_literature_command)
 app.command(
     "export-pack",

@@ -47,6 +47,23 @@ and this project uses semantic versioning.
   `lgrlw add-literature` and `lgrlw promote`, ensuring a paper id
   stays stable whether the entry was hand-registered or promoted
   from an accepted workspace.
+- `lgrlw add-literature --ss` ingestion path via the Semantic Scholar
+  Graph API (`https://api.semanticscholar.org/graph/v1/paper`). The
+  new `SemanticScholarFetcher` accepts the full range of identifier
+  forms the S2 API recognises: a bare 40-char `paperId`, a Semantic
+  Scholar paper URL (with or without the human slug / query string),
+  prefixed aliases (`DOI:` / `ARXIV:` / `CorpusId:` / `MAG:` / `ACL:`
+  / `PMID:` / `URL:`), and bare DOIs / arXiv ids (auto-wrapped to
+  `DOI:` / `ARXIV:` before the request). Respects the `S2_API_KEY`
+  environment variable for the polite-pool `x-api-key` header and
+  reports HTTP 429 with a hint pointing at `S2_API_KEY`. `--ss` is
+  mutually exclusive with `--doi` / `--arxiv` / `--openalex` outside
+  manual mode; `--manual --ss <paperId>` still records the id without
+  a network call and enforces the 40-hex `paperId` format.
+- `SEMANTIC_SCHOLAR_ID_PATTERN` schema constraint plus mirrored
+  `pattern` property in `schemas/paper.schema.json` and
+  `schemas/paper_metadata.schema.json`, validating
+  `semantic_scholar_id` fields end-to-end.
 
 ### Changed
 

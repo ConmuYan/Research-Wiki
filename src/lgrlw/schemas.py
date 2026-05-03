@@ -26,6 +26,8 @@ DOI_PATTERN = re.compile(r"^10\.\d{4,9}/\S+$")
 ARXIV_PATTERN = re.compile(r"^(?:\d{4}\.\d{4,5}(?:v\d+)?|[a-z\-]+(?:\.[A-Z]{2})?/\d{7}(?:v\d+)?)$")
 # OpenAlex Work IDs: capital-W followed by a numeric tail.
 OPENALEX_ID_PATTERN = re.compile(r"^W\d+$")
+# Semantic Scholar paper IDs: canonical 40-char SHA-1 hex, lowercase.
+SEMANTIC_SCHOLAR_ID_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 WINDOWS_DRIVE_PATTERN = re.compile(r"^[A-Za-z]:")
 
@@ -107,6 +109,16 @@ class PaperFrontmatter(BaseModel):
             raise ValueError(f"invalid OpenAlex id {v!r}; must match {OPENALEX_ID_PATTERN.pattern}")
         return v
 
+    @field_validator("semantic_scholar_id")
+    @classmethod
+    def _validate_semantic_scholar(cls, v: str | None) -> str | None:
+        if v is not None and not SEMANTIC_SCHOLAR_ID_PATTERN.fullmatch(v):
+            raise ValueError(
+                f"invalid Semantic Scholar paper id {v!r}; "
+                f"must match {SEMANTIC_SCHOLAR_ID_PATTERN.pattern}"
+            )
+        return v
+
     @field_validator("authors")
     @classmethod
     def _validate_authors(cls, v: list[str]) -> list[str]:
@@ -153,6 +165,16 @@ class PaperMetadata(BaseModel):
     def _validate_openalex(cls, v: str | None) -> str | None:
         if v is not None and not OPENALEX_ID_PATTERN.fullmatch(v):
             raise ValueError(f"invalid OpenAlex id {v!r}; must match {OPENALEX_ID_PATTERN.pattern}")
+        return v
+
+    @field_validator("semantic_scholar_id")
+    @classmethod
+    def _validate_semantic_scholar(cls, v: str | None) -> str | None:
+        if v is not None and not SEMANTIC_SCHOLAR_ID_PATTERN.fullmatch(v):
+            raise ValueError(
+                f"invalid Semantic Scholar paper id {v!r}; "
+                f"must match {SEMANTIC_SCHOLAR_ID_PATTERN.pattern}"
+            )
         return v
 
     @field_validator("authors")
@@ -307,6 +329,7 @@ __all__ = [
     "DOI_PATTERN",
     "OPENALEX_ID_PATTERN",
     "PAPER_ID_PATTERN",
+    "SEMANTIC_SCHOLAR_ID_PATTERN",
     "SHA256_PATTERN",
     "WINDOWS_DRIVE_PATTERN",
     "WORKSPACE_ID_PATTERN",

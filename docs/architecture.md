@@ -57,6 +57,7 @@ src/lgrlw/
     crossref.py
     arxiv.py
     openalex.py
+    semanticscholar.py
     errors.py
   promote/            # v0.2 workspace -> KB promotion ceremony
     run.py            # promote_workspace -- the atomic promote orchestrator
