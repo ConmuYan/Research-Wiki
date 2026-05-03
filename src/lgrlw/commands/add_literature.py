@@ -9,8 +9,8 @@ from typing import Annotated, Literal
 
 import typer
 from rich.console import Console
-from slugify import slugify
 
+from lgrlw._slug import paper_slug
 from lgrlw.fetchers import ArxivFetcher, CrossrefFetcher, FetcherError, OpenAlexFetcher
 from lgrlw.fs import ensure_dir, write_frontmatter
 from lgrlw.paths import ProjectPaths, resolve_project
@@ -204,7 +204,7 @@ def _manual_frontmatter(
         console.print("[red]error[/red] --authors must contain at least one name")
         raise typer.Exit(code=1)
 
-    generated_id = paper_id or _slug_for(authors_list[0], year, title)
+    generated_id = paper_id or paper_slug(authors_list[0], year, title)
 
     try:
         return PaperFrontmatter(
@@ -299,7 +299,7 @@ def _fetched_frontmatter(
         console.print("[red]error[/red] fetched metadata is missing publication year")
         raise typer.Exit(code=1)
 
-    generated_id = paper_id or _slug_for(metadata.authors[0], metadata.year, metadata.title)
+    generated_id = paper_id or paper_slug(metadata.authors[0], metadata.year, metadata.title)
 
     try:
         return PaperFrontmatter(
@@ -359,21 +359,6 @@ def _write_literature_entry(
 
 def _split_csv(raw: str) -> list[str]:
     return [token.strip() for token in raw.split(",") if token.strip()]
-
-
-def _slug_for(first_author: str, year: int, title: str) -> str:
-    parts = first_author.replace(",", " ").split()
-    last_name = parts[-1] if parts else "anon"
-    seed = f"{last_name}-{year}-{title}"
-    return (
-        slugify(
-            seed,
-            max_length=60,
-            lowercase=True,
-            regex_pattern=r"[^a-z0-9-]",
-        )
-        or "paper"
-    )
 
 
 def _append_log(paths: ProjectPaths, message: str) -> None:

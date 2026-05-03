@@ -4,8 +4,9 @@ The CLI is intentionally small:
 
 * ``lgrlw init``              - scaffold a new project
 * ``lgrlw new-workspace``     - create a paper/idea workspace
-* ``lgrlw add-literature``    - register a manual or DOI-backed literature entry
+* ``lgrlw add-literature``    - register a manual / DOI / arXiv / OpenAlex literature entry
 * ``lgrlw export-pack``       - snapshot the KB for a workspace
+* ``lgrlw promote``           - promote an accepted workspace paper into the KB
 * ``lgrlw lint``              - verify the three-space invariants
 """
 
@@ -21,6 +22,7 @@ from lgrlw.commands.export_pack import export_pack_command
 from lgrlw.commands.init import init_command
 from lgrlw.commands.lint import lint_command
 from lgrlw.commands.new_workspace import new_workspace_command
+from lgrlw.commands.promote import promote_command
 
 
 def _show_version(value: bool) -> None:
@@ -34,7 +36,7 @@ app = typer.Typer(
     name="lgrlw",
     help=(
         "Research-Wiki - Literature-Grounded Research Lifecycle Wiki. "
-        f"v{__version__} (init / new-workspace / add-literature / export-pack / lint)."
+        f"v{__version__} (init / new-workspace / add-literature / export-pack / promote / lint)."
     ),
     no_args_is_help=True,
     add_completion=False,
@@ -49,12 +51,16 @@ app.command(
 )(new_workspace_command)
 app.command(
     "add-literature",
-    help="Register a paper in the KB (--manual or --doi).",
+    help="Register a paper in the KB (--manual / --doi / --arxiv / --openalex).",
 )(add_literature_command)
 app.command(
     "export-pack",
     help="Build an immutable, dated KB snapshot for a workspace.",
 )(export_pack_command)
+app.command(
+    "promote",
+    help="Promote an accepted workspace paper into the KB (paper card + metadata + BibTeX).",
+)(promote_command)
 app.command(
     "lint",
     help="Verify three-space boundary, frontmatter schema, and manifest invariants.",

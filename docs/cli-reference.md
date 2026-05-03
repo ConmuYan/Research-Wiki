@@ -13,9 +13,10 @@ $ lgrlw --help
 | [`lgrlw new-workspace`](#lgrlw-new-workspace) | Create a workspace (paper or idea). |
 | [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual`, `--doi`, `--arxiv`, or `--openalex`). |
 | [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
+| [`lgrlw promote`](#lgrlw-promote) | Promote an accepted workspace paper into the KB. |
 | [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
 
-Planned for later v0.2 work: `lgrlw promote`; `add-literature --ss`.
+Planned for later v0.2 work: `add-literature --ss`.
 
 ---
 
@@ -138,6 +139,52 @@ root contains `export_manifest.json` with SHA-256 for every file. See
 
 ---
 
+## `lgrlw promote`
+
+```
+lgrlw promote <workspace-id> [--id <slug>] [--force] [--root <project-root>]
+```
+
+Promote an accepted workspace paper into the KB. The full protocol
+lives in [`promotion-protocol.md`](./promotion-protocol.md); the CLI
+enforces every precondition before writing anything.
+
+| Option | Meaning |
+|---|---|
+| `workspace` | Workspace id (directory under `research-workspaces/`). |
+| `--id` | Override the auto-generated `<lastname>-<year>-<title>` slug. |
+| `--force` | Replace an existing paper card / metadata / BibTeX entry with the same id. Without this flag, duplicates fail. |
+| `--root` | Existing Research-Wiki project root (auto-detected if omitted). |
+
+**Preconditions enforced.**
+
+- `00_Project/paper_status.md` frontmatter has `status: accepted` and
+  non-null `final_title`, `final_authors`, `venue`, `year`, plus at
+  least one of `doi` or `arxiv_id`.
+- `06_Promotion/final_metadata.md` references a camera-ready PDF path
+  or public-version URL.
+- `06_Promotion/promotion_checklist.md` has every `- [ ]` ticked into
+  `- [x]` and contains at least one tick.
+- `06_Promotion/add_back_to_kb_plan.md` lists at least one intended
+  field-structure / evidence-map / method-taxonomy edit as a `- `
+  bullet (the command does *not* apply these automatically; it prints
+  a follow-up reminder).
+
+**Outputs (atomic).**
+
+- Paper card: `literature-kb/02_Literature/Papers/<id>.md`
+  (`source: promoted`, `status: accepted`).
+- Metadata snapshot: `literature-kb/01_Raw/metadata/<id>.json`.
+- BibTeX entry: `literature-kb/01_Raw/bibtex/<id>.bib`
+  (auto-generated `@inproceedings` if `venue` is set, `@misc`
+  otherwise; replace it manually if you have a curated version).
+- Log line: appended to `literature-kb/00_System/log.md`.
+
+If any precondition fails or any single write fails, no artefacts are
+left on disk. The workspace is never modified.
+
+---
+
 ## `lgrlw lint`
 
 ```
@@ -161,7 +208,7 @@ Exits `0` iff there are no findings. Warnings such as
 ## Project root semantics
 
 - `lgrlw init <path>` creates a new project at `<path>` and does not accept `--root`.
-- `lgrlw new-workspace`, `lgrlw add-literature`, and `lgrlw export-pack` operate on an existing project. Pass `--root <project-root>` explicitly, or omit it to auto-detect the nearest ancestor containing `.lgrlw.toml`.
+- `lgrlw new-workspace`, `lgrlw add-literature`, `lgrlw export-pack`, and `lgrlw promote` operate on an existing project. Pass `--root <project-root>` explicitly, or omit it to auto-detect the nearest ancestor containing `.lgrlw.toml`.
 - `lgrlw lint` accepts either a positional project root (`lgrlw lint <project-root>`) or `--root <project-root>` for consistency with the other project-scoped commands. Supplying both with different paths is an error.
 
 ## Global options

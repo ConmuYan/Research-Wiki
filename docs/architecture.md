@@ -48,15 +48,19 @@ src/lgrlw/
     new_workspace.py
     add_literature.py
     export_pack.py
+    promote.py
     lint.py
   export/
     pack.py           # build_export_pack -- the snapshot builder
-  fetchers/            # v0.2 networked metadata fetchers
+  fetchers/           # v0.2 networked metadata fetchers
     base.py
     crossref.py
     arxiv.py
     openalex.py
     errors.py
+  promote/            # v0.2 workspace -> KB promotion ceremony
+    run.py            # promote_workspace -- the atomic promote orchestrator
+  _slug.py            # canonical paper id slug (shared by add-literature & promote)
   lint/               # one rule family per file
     structure.py
     schema.py

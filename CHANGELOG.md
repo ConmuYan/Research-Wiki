@@ -29,6 +29,24 @@ and this project uses semantic versioning.
   property in `schemas/paper.schema.json` and
   `schemas/paper_metadata.schema.json`, validating `openalex_id`
   fields end-to-end.
+- `lgrlw promote` command implementing the full v0.2 promotion
+  ceremony from `docs/promotion-protocol.md`. It enforces every
+  precondition (`paper_status.md` frontmatter status / promotion
+  fields / identifiers, `06_Promotion/final_metadata.md` URL or PDF
+  reference, fully ticked `promotion_checklist.md`,
+  bullet-listed `add_back_to_kb_plan.md`) and only then writes a
+  paper card (`source: promoted`), metadata snapshot, BibTeX entry
+  (`@inproceedings` / `@misc`) and a log line. Writes are
+  rolled back on failure so promotion stays all-or-nothing.
+  Taxonomy / evidence updates from `add_back_to_kb_plan.md` remain
+  a manual follow-up (the command prints a reminder).
+- `templates/research-workspace/paper/06_Promotion/promotion_checklist.md`
+  rewritten as a real `- [ ]` task list so `lgrlw promote` can parse
+  and validate completion.
+- Shared `lgrlw._slug.paper_slug` helper used by both
+  `lgrlw add-literature` and `lgrlw promote`, ensuring a paper id
+  stays stable whether the entry was hand-registered or promoted
+  from an accepted workspace.
 
 ### Changed
 
