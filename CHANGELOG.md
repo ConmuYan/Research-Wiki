@@ -18,6 +18,17 @@ and this project uses semantic versioning.
   `lgrlw add-literature --arxiv` ingestion path with CLI-level mocked
   tests. `--manual --arxiv` still stores the id as hand-entered metadata
   without performing a network call.
+- `OpenAlexFetcher` using the OpenAlex Works API, plus
+  `lgrlw add-literature --openalex` ingestion path with CLI-level mocked
+  tests. The fetcher honours the `OPENALEX_EMAIL` polite-pool
+  environment variable, normalises `https://openalex.org/W…` URLs, and
+  is mutually exclusive with `--doi` / `--arxiv` outside manual mode.
+  `--manual --openalex` still stores the id as hand-entered metadata
+  without performing a network call.
+- `OPENALEX_ID_PATTERN` schema constraint plus mirrored `pattern`
+  property in `schemas/paper.schema.json` and
+  `schemas/paper_metadata.schema.json`, validating `openalex_id`
+  fields end-to-end.
 
 ### Changed
 

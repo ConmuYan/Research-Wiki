@@ -55,6 +55,7 @@ src/lgrlw/
     base.py
     crossref.py
     arxiv.py
+    openalex.py
     errors.py
   lint/               # one rule family per file
     structure.py

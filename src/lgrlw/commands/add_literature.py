@@ -11,7 +11,7 @@ import typer
 from rich.console import Console
 from slugify import slugify
 
-from lgrlw.fetchers import ArxivFetcher, CrossrefFetcher, FetcherError
+from lgrlw.fetchers import ArxivFetcher, CrossrefFetcher, FetcherError, OpenAlexFetcher
 from lgrlw.fs import ensure_dir, write_frontmatter
 from lgrlw.paths import ProjectPaths, resolve_project
 from lgrlw.render.paper_card import render_paper_card
@@ -52,6 +52,16 @@ def add_literature_command(
             help="arXiv id. With --manual, stored as metadata; without --manual, fetched from arXiv.",
         ),
     ] = None,
+    openalex: Annotated[
+        str | None,
+        typer.Option(
+            "--openalex",
+            help=(
+                "OpenAlex Work id (e.g. W2741809807). With --manual, stored as metadata; "
+                "without --manual, fetched from the OpenAlex Works API."
+            ),
+        ),
+    ] = None,
     url: Annotated[str | None, typer.Option("--url", help="Canonical URL.")] = None,
     status: Annotated[
         PaperStatus,
@@ -78,7 +88,7 @@ def add_literature_command(
     ] = None,
 ) -> None:
     """Add a literature entry to the KB."""
-    mode = _select_mode(manual, doi, arxiv)
+    mode = _select_mode(manual, doi, arxiv, openalex)
     paths = resolve_project(root)
     tags_list = _split_csv(tags or "")
 
@@ -90,6 +100,7 @@ def add_literature_command(
             venue=venue,
             doi=doi,
             arxiv=arxiv,
+            openalex=openalex,
             url=url,
             status=status,
             tags=tags_list,
@@ -108,7 +119,7 @@ def add_literature_command(
         metadata = _fetch_doi_metadata(doi or "")
         fm = _fetched_frontmatter(metadata, status=status, tags=tags_list, paper_id=paper_id)
         source_label = "doi"
-    else:
+    elif mode == "arxiv":
         _reject_fetch_mode_overrides(
             mode=mode,
             title=title,
@@ -120,6 +131,18 @@ def add_literature_command(
         metadata = _fetch_arxiv_metadata(arxiv or "")
         fm = _fetched_frontmatter(metadata, status=status, tags=tags_list, paper_id=paper_id)
         source_label = "arxiv"
+    else:
+        _reject_fetch_mode_overrides(
+            mode=mode,
+            title=title,
+            authors=authors,
+            year=year,
+            venue=venue,
+            url=url,
+        )
+        metadata = _fetch_openalex_metadata(openalex or "")
+        fm = _fetched_frontmatter(metadata, status=status, tags=tags_list, paper_id=paper_id)
+        source_label = "openalex"
 
     _write_literature_entry(paths, fm, force=force, source_label=source_label)
 
@@ -128,19 +151,28 @@ def _select_mode(
     manual: bool,
     doi: str | None,
     arxiv: str | None,
-) -> Literal["manual", "doi", "arxiv"]:
+    openalex: str | None,
+) -> Literal["manual", "doi", "arxiv", "openalex"]:
     if manual:
         return "manual"
-    sources = [name for name, value in (("doi", doi), ("arxiv", arxiv)) if value]
+    sources = [
+        name for name, value in (("doi", doi), ("arxiv", arxiv), ("openalex", openalex)) if value
+    ]
     if sources == ["doi"]:
         return "doi"
     if sources == ["arxiv"]:
         return "arxiv"
+    if sources == ["openalex"]:
+        return "openalex"
     if len(sources) > 1:
-        console.print("[red]error[/red] provide exactly one network source: --doi or --arxiv")
+        console.print(
+            "[red]error[/red] provide exactly one network source: --doi, --arxiv, or --openalex"
+        )
         console.print("       use --manual to store multiple identifiers as hand-entered metadata")
         raise typer.Exit(code=1)
-    console.print("[red]error[/red] provide a literature source: --manual, --doi, or --arxiv")
+    console.print(
+        "[red]error[/red] provide a literature source: --manual, --doi, --arxiv, or --openalex"
+    )
     raise typer.Exit(code=1)
 
 
@@ -152,6 +184,7 @@ def _manual_frontmatter(
     venue: str | None,
     doi: str | None,
     arxiv: str | None,
+    openalex: str | None,
     url: str | None,
     status: PaperStatus,
     tags: list[str],
@@ -182,6 +215,7 @@ def _manual_frontmatter(
             venue=venue,
             doi=doi,
             arxiv_id=arxiv,
+            openalex_id=openalex,
             url=url,
             status=status,
             source=PaperKind.manual,
@@ -195,7 +229,7 @@ def _manual_frontmatter(
 
 def _reject_fetch_mode_overrides(
     *,
-    mode: Literal["doi", "arxiv"],
+    mode: Literal["doi", "arxiv", "openalex"],
     title: str,
     authors: str,
     year: int,
@@ -238,6 +272,17 @@ def _fetch_arxiv_metadata(arxiv: str) -> PaperMetadata:
         return fetcher.fetch(arxiv)
     except FetcherError as exc:
         console.print(f"[red]error[/red] arXiv fetch failed: {exc}")
+        raise typer.Exit(code=1) from exc
+    finally:
+        fetcher.close()
+
+
+def _fetch_openalex_metadata(openalex: str) -> PaperMetadata:
+    fetcher = OpenAlexFetcher()
+    try:
+        return fetcher.fetch(openalex)
+    except FetcherError as exc:
+        console.print(f"[red]error[/red] OpenAlex fetch failed: {exc}")
         raise typer.Exit(code=1) from exc
     finally:
         fetcher.close()

@@ -24,6 +24,8 @@ WORKSPACE_ID_PATTERN = re.compile(r"^[a-z0-9_](?:[a-z0-9_-]*)?$")
 DOI_PATTERN = re.compile(r"^10\.\d{4,9}/\S+$")
 # arXiv: new-style 2310.11511 or 2310.11511v2, or legacy cat/0701001
 ARXIV_PATTERN = re.compile(r"^(?:\d{4}\.\d{4,5}(?:v\d+)?|[a-z\-]+(?:\.[A-Z]{2})?/\d{7}(?:v\d+)?)$")
+# OpenAlex Work IDs: capital-W followed by a numeric tail.
+OPENALEX_ID_PATTERN = re.compile(r"^W\d+$")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 WINDOWS_DRIVE_PATTERN = re.compile(r"^[A-Za-z]:")
 
@@ -98,6 +100,13 @@ class PaperFrontmatter(BaseModel):
             raise ValueError(f"invalid arXiv id {v!r}")
         return v
 
+    @field_validator("openalex_id")
+    @classmethod
+    def _validate_openalex(cls, v: str | None) -> str | None:
+        if v is not None and not OPENALEX_ID_PATTERN.fullmatch(v):
+            raise ValueError(f"invalid OpenAlex id {v!r}; must match {OPENALEX_ID_PATTERN.pattern}")
+        return v
+
     @field_validator("authors")
     @classmethod
     def _validate_authors(cls, v: list[str]) -> list[str]:
@@ -137,6 +146,13 @@ class PaperMetadata(BaseModel):
     def _validate_arxiv(cls, v: str | None) -> str | None:
         if v is not None and not ARXIV_PATTERN.fullmatch(v):
             raise ValueError(f"invalid arXiv id {v!r}")
+        return v
+
+    @field_validator("openalex_id")
+    @classmethod
+    def _validate_openalex(cls, v: str | None) -> str | None:
+        if v is not None and not OPENALEX_ID_PATTERN.fullmatch(v):
+            raise ValueError(f"invalid OpenAlex id {v!r}; must match {OPENALEX_ID_PATTERN.pattern}")
         return v
 
     @field_validator("authors")
@@ -289,6 +305,7 @@ class LintFinding(BaseModel):
 __all__ = [
     "ARXIV_PATTERN",
     "DOI_PATTERN",
+    "OPENALEX_ID_PATTERN",
     "PAPER_ID_PATTERN",
     "SHA256_PATTERN",
     "WINDOWS_DRIVE_PATTERN",

@@ -23,7 +23,7 @@
       "type": ["string", "null"],
       "pattern": "^(?:\\d{4}\\.\\d{4,5}(?:v\\d+)?|[a-z\\-]+(?:\\.[A-Z]{2})?/\\d{7}(?:v\\d+)?)$"
     },
-    "openalex_id":         {"type": ["string", "null"]},
+    "openalex_id":         {"type": ["string", "null"], "pattern": "^W\\d+$"},
     "semantic_scholar_id": {"type": ["string", "null"]},
     "url":                 {"type": ["string", "null"]},
     "status": {"enum": ["published", "accepted", "preprint"]},

@@ -11,11 +11,11 @@ $ lgrlw --help
 |---|---|
 | [`lgrlw init`](#lgrlw-init) | Bootstrap a new Research-Wiki project. |
 | [`lgrlw new-workspace`](#lgrlw-new-workspace) | Create a workspace (paper or idea). |
-| [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual` or `--doi`). |
+| [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual`, `--doi`, `--arxiv`, or `--openalex`). |
 | [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
 | [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
 
-Planned for later v0.2 work: `lgrlw promote`; `add-literature --arxiv / --ss`.
+Planned for later v0.2 work: `lgrlw promote`; `add-literature --ss`.
 
 ---
 
@@ -91,14 +91,24 @@ lgrlw add-literature --arxiv <arxiv-id-or-url> \
   [--id <slug>] [--force] [--root <project-root>]
 ```
 
+OpenAlex-backed entry via the OpenAlex Works API:
+
+```
+lgrlw add-literature --openalex <openalex-id-or-url> \
+  [--status published|accepted|preprint] \
+  [--tags "tag1,tag2"] \
+  [--id <slug>] [--force] [--root <project-root>]
+```
+
 | Option | Meaning |
 |---|---|
-| `--manual` | Create a hand-entered record. With `--manual`, `--doi` / `--arxiv` are stored as metadata and do not trigger a network fetch. |
+| `--manual` | Create a hand-entered record. With `--manual`, `--doi` / `--arxiv` / `--openalex` are stored as metadata and do not trigger a network fetch. |
 | `--doi` | Without `--manual`, fetch metadata from Crossref for the DOI. With `--manual`, store the DOI on the hand-entered record. |
-| `--arxiv` | Without `--manual`, fetch metadata from the arXiv Atom API for the given id or abs URL. With `--manual`, store the arXiv id on the hand-entered record. `--doi` and `--arxiv` are mutually exclusive outside manual mode. |
-| `--title` / `--authors` / `--year` | Mandatory for manual; rejected in DOI/arXiv fetch modes. |
-| `--venue` | Free-form for manual entries (e.g. "ICLR 2024", "arXiv preprint"); rejected in DOI/arXiv fetch modes. |
-| `--url` | Canonical URL for manual entries; rejected in DOI/arXiv fetch modes. |
+| `--arxiv` | Without `--manual`, fetch metadata from the arXiv Atom API for the given id or abs URL. With `--manual`, store the arXiv id on the hand-entered record. |
+| `--openalex` | Without `--manual`, fetch metadata from the OpenAlex Works endpoint for the given Work id (e.g. `W4385545131`) or `https://openalex.org/W…` URL. With `--manual`, store the OpenAlex id on the hand-entered record. `--doi`, `--arxiv`, and `--openalex` are mutually exclusive outside manual mode. |
+| `--title` / `--authors` / `--year` | Mandatory for manual; rejected in DOI/arXiv/OpenAlex fetch modes. |
+| `--venue` | Free-form for manual entries (e.g. "ICLR 2024", "arXiv preprint"); rejected in DOI/arXiv/OpenAlex fetch modes. |
+| `--url` | Canonical URL for manual entries; rejected in DOI/arXiv/OpenAlex fetch modes. |
 | `--status` | One of `published` / `accepted` / `preprint`. |
 | `--tags` | Comma-separated tags. |
 | `--id` | Override the auto-generated slug. |
@@ -161,8 +171,8 @@ Exits `0` iff there are no findings. Warnings such as
 
 ## Environment
 
-Networked DOI ingestion honours Crossref's optional contact email. Later v0.2 fetchers will honour their own source-specific environment variables:
+Networked ingestion honours each source's polite-pool / authentication conventions:
 
-- `OPENALEX_EMAIL` &mdash; contact email for polite OpenAlex usage.
-- `S2_API_KEY` &mdash; Semantic Scholar API key.
-- `CROSSREF_MAILTO` &mdash; contact email for polite Crossref usage.
+- `CROSSREF_MAILTO` &mdash; contact email forwarded to Crossref's polite pool when `--doi` is used.
+- `OPENALEX_EMAIL` &mdash; contact email forwarded to OpenAlex's polite pool when `--openalex` is used.
+- `S2_API_KEY` &mdash; Semantic Scholar API key (consumed by `add-literature --ss` once it ships).
