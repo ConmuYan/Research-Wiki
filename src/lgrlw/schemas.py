@@ -281,14 +281,43 @@ class ExportManifest(BaseModel):
 # Project config
 # ---------------------------------------------------------------------------
 class ProjectConfig(BaseModel):
-    """Parsed contents of ``.lgrlw.toml``'s ``[project]`` table."""
+    """Parsed contents of ``.lgrlw.toml``'s ``[project]`` table.
+
+    Two layouts are supported:
+
+    * **Single-direction** (``monorepo = false``, the default and the
+      v0.1/v0.2 layout). The project root holds ``literature-kb/`` and
+      ``research-workspaces/`` directly, plus this marker file.
+    * **Monorepo** (``monorepo = true``, introduced in v0.3). The
+      project root holds a ``directions/`` directory with one
+      single-direction subproject per child slug. ``directions`` lists
+      every slug that lives under ``directions/``. Each subproject has
+      its own standard single-direction ``.lgrlw.toml``.
+    """
 
     model_config = ConfigDict(extra="allow", str_strip_whitespace=True)
 
-    schema_version: Literal["1.0.0"] = "1.0.0"
+    # 1.0.0 = v0.1/v0.2 single-direction layout.
+    # 1.1.0 = v0.3 monorepo umbrella layout.
+    schema_version: Literal["1.0.0", "1.1.0"] = "1.0.0"
     direction: str = Field(min_length=1)
     kb_name: str = "literature-kb"
     workspaces_name: str = "research-workspaces"
+    monorepo: bool = False
+    directions: list[str] = Field(default_factory=list)
+
+    @field_validator("directions")
+    @classmethod
+    def _validate_directions(cls, v: list[str]) -> list[str]:
+        cleaned = [d.strip() for d in v if d and d.strip()]
+        for slug in cleaned:
+            if not PAPER_ID_PATTERN.fullmatch(slug):
+                raise ValueError(
+                    f"invalid direction slug {slug!r}; must match {PAPER_ID_PATTERN.pattern}"
+                )
+        if len(cleaned) != len(set(cleaned)):
+            raise ValueError("monorepo `directions` must not contain duplicate slugs")
+        return cleaned
 
 
 def _ensure_relative_posix_path(value: str) -> None:

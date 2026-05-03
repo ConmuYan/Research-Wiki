@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lgrlw"
-version = "0.2.0"
+version = "0.3.0.dev0"
 description = "Literature-Grounded Research Lifecycle Wiki — a long-horizon research operating system with strict KB/Workspace separation and immutable export snapshots."
 readme = "README.md"
 license = { text = "MIT" }
@@ -47,16 +47,23 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# v0.2 will ship networked fetchers and add httpx + bibtexparser + respx.
+# v0.3: opt-in Model Context Protocol server. The core `lgrlw` install
+# does *not* depend on the `mcp` package; users who want `lgrlw mcp
+# serve` install the `mcp` extra.
+mcp = [
+  "mcp>=1.0",
+]
 dev = [
   "build>=1.2",
   "pytest>=8.2",
   "pytest-cov>=5.0",
+  "pytest-asyncio>=0.23",
   "respx>=0.21",
   "ruff>=0.5",
   "mypy>=1.10",
   "twine>=5.0",
   "types-PyYAML",
+  "mcp>=1.0",
 ]
 
 [project.scripts]
@@ -138,6 +145,7 @@ ignore = [
 # tests such as tests/test_e2e_guide.py where the linear flow IS the
 # story being verified.
 "tests/**/*.py" = ["PLR2004", "PLR0915", "S101"]
+"src/lgrlw/mcp/server.py" = ["PLR0915"]
 
 [tool.ruff.format]
 quote-style = "double"

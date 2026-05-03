@@ -1,6 +1,6 @@
 # CLI reference
 
-The `lgrlw` CLI exposes five commands. All commands respect
+The `lgrlw` CLI exposes eight top-level commands. All commands respect
 `-h` / `--help` for detailed usage.
 
 ```
@@ -15,6 +15,8 @@ $ lgrlw --help
 | [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
 | [`lgrlw promote`](#lgrlw-promote) | Promote an accepted workspace paper into the KB. |
 | [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
+| [`lgrlw add-direction`](#lgrlw-add-direction) | Add a direction to a monorepo umbrella. |
+| [`lgrlw mcp serve`](#lgrlw-mcp-serve) | Run the optional MCP server over stdio. |
 
 ---
 
@@ -23,25 +25,28 @@ $ lgrlw --help
 Scaffold a new project.
 
 ```
-lgrlw init <path> --direction <slug> [--force]
+lgrlw init <path> --direction <slug> [--monorepo] [--force]
 ```
 
 | Option | Meaning |
 |---|---|
 | `path` | Directory to create (parents created if missing). |
 | `--direction`, `-d` | Short slug naming the research direction. |
+| `--monorepo` | Create a v0.3 umbrella root with the first child project under `directions/<slug>/`. |
 | `--force` | Re-initialise even if `.lgrlw.toml` already exists. |
 
-**Output.** `<path>/literature-kb/` populated from the packaged template,
-an empty `<path>/research-workspaces/` with a pointer README, and
-`<path>/.lgrlw.toml`.
+**Output.** Without `--monorepo`, `<path>/literature-kb/` is populated from
+the packaged template, `<path>/research-workspaces/` is created, and
+`<path>/.lgrlw.toml` marks the project. With `--monorepo`, the umbrella root
+gets `.lgrlw.toml` with `monorepo = true`, and the first child project is
+created at `<path>/directions/<slug>/`.
 
 ---
 
 ## `lgrlw new-workspace`
 
 ```
-lgrlw new-workspace <id> --title "..." [--kind paper|idea] [--root <project-root>]
+lgrlw new-workspace <id> --title "..." [--kind paper|idea] [--root <project-root>] [--direction <slug>]
 ```
 
 | Option | Meaning |
@@ -50,6 +55,7 @@ lgrlw new-workspace <id> --title "..." [--kind paper|idea] [--root <project-root
 | `--title` | Working title (required). |
 | `--kind` | `paper` (default) or `idea`. Selects the template. |
 | `--root` | Existing Research-Wiki project root (auto-detected if omitted). |
+| `--direction` | Monorepo direction slug when `--root` points at a monorepo umbrella. |
 
 **Output.** `research-workspaces/<id>/` populated from the matching
 template. For `--kind paper`, `00_Project/paper_status.md` has frontmatter
@@ -69,7 +75,7 @@ lgrlw add-literature --manual \
   [--venue "..."] [--doi ...] [--arxiv ...] [--openalex ...] [--ss ...] [--url ...] \
   [--status published|accepted|preprint] \
   [--tags "tag1,tag2"] \
-  [--id <slug>] [--force] [--root <project-root>]
+  [--id <slug>] [--force] [--root <project-root>] [--direction <slug>]
 ```
 
 DOI-backed entry via Crossref:
@@ -78,7 +84,7 @@ DOI-backed entry via Crossref:
 lgrlw add-literature --doi <doi> \
   [--status published|accepted|preprint] \
   [--tags "tag1,tag2"] \
-  [--id <slug>] [--force] [--root <project-root>]
+  [--id <slug>] [--force] [--root <project-root>] [--direction <slug>]
 ```
 
 arXiv-backed entry via the arXiv Atom API:
@@ -87,7 +93,7 @@ arXiv-backed entry via the arXiv Atom API:
 lgrlw add-literature --arxiv <arxiv-id-or-url> \
   [--status published|accepted|preprint] \
   [--tags "tag1,tag2"] \
-  [--id <slug>] [--force] [--root <project-root>]
+  [--id <slug>] [--force] [--root <project-root>] [--direction <slug>]
 ```
 
 OpenAlex-backed entry via the OpenAlex Works API:
@@ -96,7 +102,7 @@ OpenAlex-backed entry via the OpenAlex Works API:
 lgrlw add-literature --openalex <openalex-id-or-url> \
   [--status published|accepted|preprint] \
   [--tags "tag1,tag2"] \
-  [--id <slug>] [--force] [--root <project-root>]
+  [--id <slug>] [--force] [--root <project-root>] [--direction <slug>]
 ```
 
 Semantic Scholar-backed entry via the S2 Graph API:
@@ -105,7 +111,7 @@ Semantic Scholar-backed entry via the S2 Graph API:
 lgrlw add-literature --ss <s2-id-or-url-or-alias> \
   [--status published|accepted|preprint] \
   [--tags "tag1,tag2"] \
-  [--id <slug>] [--force] [--root <project-root>]
+  [--id <slug>] [--force] [--root <project-root>] [--direction <slug>]
 ```
 
 The `--ss` value can be any of:
@@ -135,6 +141,7 @@ API in `semantic_scholar_id`.
 | `--id` | Override the auto-generated slug. |
 | `--force` | Replace an existing paper card and metadata with the same id. Without this flag, duplicate ids fail. |
 | `--root` | Existing Research-Wiki project root (auto-detected if omitted). |
+| `--direction` | Monorepo direction slug when `--root` points at a monorepo umbrella. |
 
 **Output.**
 
@@ -147,7 +154,7 @@ API in `semantic_scholar_id`.
 ## `lgrlw export-pack`
 
 ```
-lgrlw export-pack <workspace-id> [--root <project-root>]
+lgrlw export-pack <workspace-id> [--root <project-root>] [--direction <slug>]
 ```
 
 Builds a dated KB snapshot under
@@ -157,12 +164,14 @@ mirrored into
 root contains `export_manifest.json` with SHA-256 for every file. See
 [`export-protocol.md`](./export-protocol.md) for the full spec.
 
+Pass `--direction <slug>` when operating from a monorepo umbrella.
+
 ---
 
 ## `lgrlw promote`
 
 ```
-lgrlw promote <workspace-id> [--id <slug>] [--force] [--root <project-root>]
+lgrlw promote <workspace-id> [--id <slug>] [--force] [--root <project-root>] [--direction <slug>]
 ```
 
 Promote an accepted workspace paper into the KB. The full protocol
@@ -175,6 +184,7 @@ enforces every precondition before writing anything.
 | `--id` | Override the auto-generated `<lastname>-<year>-<title>` slug. |
 | `--force` | Replace an existing paper card / metadata / BibTeX entry with the same id. Without this flag, duplicates fail. |
 | `--root` | Existing Research-Wiki project root (auto-detected if omitted). |
+| `--direction` | Monorepo direction slug when `--root` points at a monorepo umbrella. |
 
 **Preconditions enforced.**
 
@@ -208,7 +218,7 @@ left on disk. The workspace is never modified.
 ## `lgrlw lint`
 
 ```
-lgrlw lint [<project-root>] [--root <project-root>]
+lgrlw lint [<project-root>] [--root <project-root>] [--direction <slug>]
 ```
 
 Runs every invariant check:
@@ -225,11 +235,53 @@ Runs every invariant check:
 Exits `0` iff there are no findings. Warnings such as
 `manifest.file_extra` are reported and also produce a non-zero exit code.
 
+When invoked at a monorepo umbrella root without `--direction`, `lint`
+recursively checks every direction listed in the umbrella `.lgrlw.toml` and
+renders findings with `directions/<slug>/...` paths. With `--direction`, only
+that subproject is checked.
+
+---
+
+## `lgrlw add-direction`
+
+```
+lgrlw add-direction <slug> [--root <monorepo-root>] [--force]
+```
+
+Adds a child project under `directions/<slug>/` to an existing monorepo
+umbrella and appends the slug to the umbrella `.lgrlw.toml` `directions`
+array.
+
+| Option | Meaning |
+|---|---|
+| `slug` | New direction slug. Matches the same slug grammar as paper ids (`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$`). |
+| `--root` | Monorepo umbrella root (auto-detected if omitted). |
+| `--force` | Re-materialise `directions/<slug>/` if it already exists. |
+
+---
+
+## `lgrlw mcp serve`
+
+```
+lgrlw mcp serve [--root <project-root-or-monorepo-root>]
+```
+
+Runs the optional Model Context Protocol server over stdio. Install it with:
+
+```
+pip install "lgrlw[mcp]"
+```
+
+The server exposes tools mirroring the CLI (`init_project`,
+`new_workspace`, `add_literature`, `export_pack`, `promote`, `lint`,
+`add_direction`) and read-only resources for the default project's summary,
+paper cards, and workspaces. See [`mcp-server.md`](./mcp-server.md).
+
 ## Project root semantics
 
-- `lgrlw init <path>` creates a new project at `<path>` and does not accept `--root`.
-- `lgrlw new-workspace`, `lgrlw add-literature`, `lgrlw export-pack`, and `lgrlw promote` operate on an existing project. Pass `--root <project-root>` explicitly, or omit it to auto-detect the nearest ancestor containing `.lgrlw.toml`.
-- `lgrlw lint` accepts either a positional project root (`lgrlw lint <project-root>`) or `--root <project-root>` for consistency with the other project-scoped commands. Supplying both with different paths is an error.
+- `lgrlw init <path>` creates either a single-direction project or, with `--monorepo`, an umbrella root and the first `directions/<slug>/` child project.
+- `lgrlw new-workspace`, `lgrlw add-literature`, `lgrlw export-pack`, and `lgrlw promote` operate on an existing single-direction project. In a monorepo, pass the umbrella `--root` plus `--direction <slug>` (or run from inside `directions/<slug>/`).
+- `lgrlw lint` accepts either a positional project root (`lgrlw lint <project-root>`) or `--root <project-root>` for consistency with the other project-scoped commands. Supplying both with different paths is an error. A monorepo umbrella is linted recursively unless `--direction` is provided.
 
 ## Global options
 

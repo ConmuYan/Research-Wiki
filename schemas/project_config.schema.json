@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ConmuYan/Research-Wiki/schemas/project_config.schema.json",
+  "title": "Research-Wiki ProjectConfig",
+  "description": "Schema for the [project] table in .lgrlw.toml.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["direction"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0.0", "1.1.0"],
+      "default": "1.0.0",
+      "description": "1.0.0 is the single-direction layout; 1.1.0 is the v0.3 monorepo umbrella layout."
+    },
+    "direction": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Research direction slug. For a monorepo umbrella this is the default/first direction."
+    },
+    "kb_name": {
+      "type": "string",
+      "default": "literature-kb"
+    },
+    "workspaces_name": {
+      "type": "string",
+      "default": "research-workspaces"
+    },
+    "monorepo": {
+      "type": "boolean",
+      "default": false,
+      "description": "True only for a v0.3 umbrella root whose directions live under directions/<slug>/."
+    },
+    "directions": {
+      "type": "array",
+      "default": [],
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+      },
+      "description": "Registered child direction slugs for a monorepo umbrella."
+    }
+  }
+}

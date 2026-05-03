@@ -19,7 +19,8 @@ from lgrlw.fetchers import (
     SemanticScholarFetcher,
 )
 from lgrlw.fs import ensure_dir, write_frontmatter
-from lgrlw.paths import ProjectPaths, resolve_project
+from lgrlw.monorepo import MonorepoError, resolve_subproject
+from lgrlw.paths import ProjectPaths
 from lgrlw.render.paper_card import render_paper_card
 from lgrlw.schemas import PaperFrontmatter, PaperKind, PaperMetadata, PaperStatus
 
@@ -103,10 +104,24 @@ def add_literature_command(
         Path | None,
         typer.Option("--root", help="Project root (auto-detect if omitted)."),
     ] = None,
+    direction: Annotated[
+        str | None,
+        typer.Option(
+            "--direction",
+            help=(
+                "Monorepo direction slug. Required when --root points at a monorepo "
+                "umbrella; ignored otherwise."
+            ),
+        ),
+    ] = None,
 ) -> None:
     """Add a literature entry to the KB."""
     mode = _select_mode(manual, doi, arxiv, openalex, ss)
-    paths = resolve_project(root)
+    try:
+        paths = resolve_subproject(root, direction)
+    except MonorepoError as exc:
+        console.print(f"[red]error[/red] {exc}")
+        raise typer.Exit(code=1) from exc
     tags_list = _split_csv(tags or "")
 
     if mode == "manual":

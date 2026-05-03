@@ -11,7 +11,7 @@ from rich.console import Console
 
 from lgrlw._resources import templates_root
 from lgrlw.fs import copy_tree, read_frontmatter, write_frontmatter
-from lgrlw.paths import resolve_project
+from lgrlw.monorepo import MonorepoError, resolve_subproject
 from lgrlw.schemas import (
     WORKSPACE_ID_PATTERN,
     WorkspaceKind,
@@ -51,6 +51,16 @@ def new_workspace_command(
             help="Project root (auto-detected if omitted).",
         ),
     ] = None,
+    direction: Annotated[
+        str | None,
+        typer.Option(
+            "--direction",
+            help=(
+                "Monorepo direction slug. Required when --root points at a monorepo "
+                "umbrella; ignored otherwise."
+            ),
+        ),
+    ] = None,
 ) -> None:
     """Create a new workspace under ``research-workspaces/<name>/``.
 
@@ -64,7 +74,11 @@ def new_workspace_command(
         console.print("[red]error[/red] --title must not be empty")
         raise typer.Exit(code=1)
 
-    paths = resolve_project(root)
+    try:
+        paths = resolve_subproject(root, direction)
+    except MonorepoError as exc:
+        console.print(f"[red]error[/red] {exc}")
+        raise typer.Exit(code=1) from exc
     dst = paths.workspace(name)
     if dst.exists():
         console.print(f"[red]error[/red] workspace already exists: {dst}")

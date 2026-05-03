@@ -8,7 +8,7 @@ from pathlib import Path
 if sys.version_info >= (3, 11):
     import tomllib
 else:  # pragma: no cover - exercised only on Python 3.10
-    import tomli as tomllib
+    import tomli as tomllib  # type: ignore[import-not-found]
 
 from lgrlw.schemas import ProjectConfig
 
@@ -26,6 +26,10 @@ def dump_config(cfg: ProjectConfig, path: Path) -> None:
     We intentionally do not use a third-party TOML writer: the schema is
     flat and fully controlled by us, so a hand-written emitter keeps the
     dependency set minimal and the output stable for diffing.
+
+    Monorepo umbrella configs (``cfg.monorepo == True``) emit a
+    ``directions`` array; child subprojects keep the same single-direction
+    schema as v0.1/v0.2.
     """
     lines = [
         "# Research-Wiki project configuration.",
@@ -36,8 +40,12 @@ def dump_config(cfg: ProjectConfig, path: Path) -> None:
         f'direction        = "{_escape(cfg.direction)}"',
         f'kb_name          = "{_escape(cfg.kb_name)}"',
         f'workspaces_name  = "{_escape(cfg.workspaces_name)}"',
-        "",
     ]
+    if cfg.monorepo:
+        lines.append("monorepo         = true")
+        rendered = ", ".join(f'"{_escape(slug)}"' for slug in cfg.directions)
+        lines.append(f"directions       = [{rendered}]")
+    lines.append("")
     path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 

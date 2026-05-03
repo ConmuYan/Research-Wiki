@@ -9,7 +9,7 @@ import typer
 from rich.console import Console
 from rich.markup import escape
 
-from lgrlw.paths import resolve_project
+from lgrlw.monorepo import MonorepoError, resolve_subproject
 from lgrlw.promote import PromoteError, promote_workspace
 
 console = Console()
@@ -38,6 +38,16 @@ def promote_command(
         Path | None,
         typer.Option("--root", help="Project root (auto-detect if omitted)."),
     ] = None,
+    direction: Annotated[
+        str | None,
+        typer.Option(
+            "--direction",
+            help=(
+                "Monorepo direction slug. Required when --root points at a monorepo "
+                "umbrella; ignored otherwise."
+            ),
+        ),
+    ] = None,
 ) -> None:
     """Promote ``workspace`` from `accepted` workspace status into the KB.
 
@@ -50,7 +60,11 @@ def promote_command(
     * ``literature-kb/01_Raw/bibtex/<id>.bib``
     * an appended line in ``literature-kb/00_System/log.md``
     """
-    paths = resolve_project(root)
+    try:
+        paths = resolve_subproject(root, direction)
+    except MonorepoError as exc:
+        console.print(f"[red]error[/red] {exc}")
+        raise typer.Exit(code=1) from exc
     try:
         result = promote_workspace(
             paths,

@@ -79,10 +79,10 @@ def _normalize_arxiv_id(identifier: str) -> str:
 
 def _metadata_from_entry(arxiv_id: str, entry: ET.Element) -> PaperMetadata:
     title = _clean_text(_text(entry, _atom("title")))
-    authors = [
+    authors_raw = [
         _clean_text(_text(author, _atom("name"))) for author in entry.findall(_atom("author"))
     ]
-    authors = [author for author in authors if author]
+    authors = [author for author in authors_raw if author is not None]
     published = _text(entry, _atom("published"))
     year = _year(published)
     if title is None or not authors or year is None:

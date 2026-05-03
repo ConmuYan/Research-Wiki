@@ -22,7 +22,7 @@ Strict separation between *public literature* and *unpublished research*, with a
 
 ---
 
-> **Current status &mdash; v0.2 in development on `develop/v0.2`.** v0.1 shipped the three-space scaffold, the base CLI (`init`, `new-workspace`, `add-literature --manual`, `export-pack`, `lint`), the full boundary invariant, and dated export snapshots with SHA-256 manifests. **v0.2 adds four networked metadata fetchers** (`--doi` via Crossref, `--arxiv` via the arXiv Atom API, `--openalex` via the OpenAlex Works API, `--ss` via the Semantic Scholar Graph API), plus the **promotion ceremony** (`lgrlw promote`) that atomically lifts an accepted workspace paper into the KB with paper card + metadata + BibTeX. **PDF &rarr; Markdown conversion** is still a `Later` roadmap item. See the [Roadmap](#roadmap).
+> **Current status &mdash; v0.2.0 released; v0.3 in development on `develop/v0.3`.** v0.1 shipped the three-space scaffold and the base CLI. **v0.2.0** added four networked metadata fetchers (`--doi` Crossref / `--arxiv` arXiv Atom / `--openalex` OpenAlex Works / `--ss` Semantic Scholar Graph), plus the **promotion ceremony** (`lgrlw promote`) that atomically lifts an accepted workspace paper into the KB with paper card + metadata + BibTeX. **v0.3 (in development)** adds a built-in **MCP server** (`lgrlw mcp serve`) so agents (Claude Code, Cursor, Windsurf) can call every CLI command over the Model Context Protocol, and **multi-direction monorepo support** so a single git repo can host several research directions side by side under `directions/<slug>/`. **PDF &rarr; Markdown conversion** remains a `Later` roadmap item. See the [Roadmap](#roadmap).
 
 ---
 
@@ -297,21 +297,24 @@ Every other write — ideas, hypotheses, experiment logs, draft claims, rebuttal
 - [x] Dated, immutable export packs with SHA-256 manifest
 - [x] Worked `examples/demo_direction/` that `lint` + `export-pack` cleanly
 
-**v0.2 — in development on `develop/v0.2`**
+**v0.2 &mdash; shipped (networked literature ingestion + promotion ceremony)**
 
 - [x] Networked fetchers under `lgrlw.fetchers`: Crossref (`--doi`), arXiv (`--arxiv`), OpenAlex (`--openalex`), Semantic Scholar (`--ss`), each with `respx`-mocked tests and a polite-pool environment variable
 - [x] `lgrlw promote` acceptance ceremony (atomic paper card + metadata + BibTeX + log line; preconditions enforced per [`docs/promotion-protocol.md`](./docs/promotion-protocol.md))
 - [x] Auto-generated BibTeX on promotion (`@inproceedings` / `@misc`)
-- [ ] Final README / translation pass and v0.2.0 tag
+- [x] Repo-wide LF normalisation (`.gitattributes` + explicit `newline="\n"` on every write path) so export-pack SHA-256 digests stay stable across Windows and Linux
+
+**v0.3 &mdash; in development on `develop/v0.3`**
+
+- [x] **MCP server** (`lgrlw mcp serve`) exposing every CLI command (`init_project`, `new_workspace`, `add_literature`, `export_pack`, `promote`, `lint`, `add_direction`) plus read-only KB / workspace resources, so agents (Claude Code, Cursor, Windsurf) can drive Research-Wiki over the Model Context Protocol. Optional dependency: `pip install "lgrlw[mcp]"`. See [`docs/mcp-server.md`](./docs/mcp-server.md).
+- [x] **Multi-direction monorepo support** &mdash; a single repo can host several research directions under `directions/<slug>/`. New CLI: `lgrlw init --monorepo`, `lgrlw add-direction <slug>`, and a `--direction <slug>` selector on every project-scoped command. `lgrlw lint` recursively checks every direction. See [`docs/monorepo.md`](./docs/monorepo.md).
 
 **Later**
 
-- [ ] MinerU integration for PDF &rarr; Markdown (plugin)
+- [ ] MinerU integration for PDF &rarr; Markdown (plugin; `pip install "lgrlw[mineru]"`)
 - [ ] Zotero bidirectional sync (plugin)
 - [ ] Obsidian graph / Dataview helpers
-- [ ] MCP server (`query_kb`, `add_literature`, `export_pack`, `promote`, `lint_boundary`)
 - [ ] Web dashboard (read-only) for taxonomy & evidence maps
-- [ ] Multi-direction mono-repo support
 
 See [open issues](https://github.com/ConmuYan/Research-Wiki/issues) and [`CHANGELOG.md`](./CHANGELOG.md).
 

@@ -22,7 +22,7 @@
 
 ---
 
-> **当前状态 — v0.2 开发中（`develop/v0.2` 分支）。** v0.1 已交付三空间脚手架、基础 CLI（`init`、`new-workspace`、`add-literature --manual`、`export-pack`、`lint`）、完整边界不变量，以及带 SHA-256 manifest 的导出快照。**v0.2 新增四条网络 fetcher**（`--doi` 走 Crossref、`--arxiv` 走 arXiv Atom、`--openalex` 走 OpenAlex Works、`--ss` 走 Semantic Scholar Graph API），以及 **Promotion 仪式**（`lgrlw promote`）：原子化地把已接收工作区论文以 paper card + metadata + BibTeX 一次性回流到 KB。**PDF → Markdown 转换** 仍在 `后续` 路线图里。见 [路线图](#路线图)。
+> **当前状态 — v0.2.0 已发布；v0.3 开发中（`develop/v0.3` 分支）。** v0.1 交付三空间脚手架与基础 CLI；**v0.2.0** 新增四条网络 fetcher（`--doi` Crossref / `--arxiv` arXiv Atom / `--openalex` OpenAlex Works / `--ss` Semantic Scholar Graph），以及 **Promotion 仪式**（`lgrlw promote`）：原子化地把已接收工作区论文以 paper card + metadata + BibTeX 一次性回流到 KB。**v0.3（开发中）** 新增内置 **MCP server**（`lgrlw mcp serve`），让 Claude Code / Cursor / Windsurf 等 agent 通过 Model Context Protocol 调用每个 CLI 命令；以及 **多方向 monorepo 支持**，让单个 git 仓库以 `directions/<slug>/` 形式同时托管多个研究方向。**PDF → Markdown 转换** 仍在 `后续` 路线图。见 [路线图](#路线图)。
 
 ---
 
@@ -297,21 +297,24 @@ research-wiki/
 - [x] 带 SHA-256 manifest 的不可变 export pack
 - [x] 可直接 lint / export-pack 的 `examples/demo_direction/`
 
-**v0.2 — 开发中（`develop/v0.2` 分支）**
+**v0.2 — 已交付（网络文献抓取 + Promotion 仪式）**
 
 - [x] `lgrlw.fetchers` 下的四条网络 fetcher：Crossref (`--doi`)、arXiv (`--arxiv`)、OpenAlex (`--openalex`)、Semantic Scholar (`--ss`)，每条都有 `respx` mock 测试与对应的礼貌池环境变量
 - [x] `lgrlw promote` 接收仪式（原子化 paper card + metadata + BibTeX + log 写入；前置条件按 [`docs/promotion-protocol.md`](./docs/promotion-protocol.md) 强制校验）
 - [x] Promotion 自动 BibTeX 生成（`@inproceedings` / `@misc`）
-- [ ] 完成 README / 翻译收尾与 v0.2.0 tag
+- [x] 仓库范围 LF 规范（`.gitattributes` + 所有写路径显式 `newline="\n"`），保证 export pack SHA-256 在 Windows 与 Linux 一致
+
+**v0.3 — 开发中（`develop/v0.3` 分支）**
+
+- [x] **MCP server**（`lgrlw mcp serve`）：把 CLI 后端（`init_project`、`new_workspace`、`add_literature`、`export_pack`、`promote`、`lint`、`add_direction`）以及只读 KB / workspace 资源以 Model Context Protocol 形式暴露，方便 Claude Code / Cursor / Windsurf 等 agent 直接驱动 Research-Wiki。可选依赖：`pip install "lgrlw[mcp]"`。见 [`docs/mcp-server.md`](./docs/mcp-server.md)
+- [x] **多方向 monorepo 支持**：单仓库在 `directions/<slug>/` 下托管多个研究方向。新增 CLI：`lgrlw init --monorepo`、`lgrlw add-direction <slug>`，以及所有项目级命令的 `--direction <slug>` 选择器；`lgrlw lint` 递归检查每个方向。见 [`docs/monorepo.md`](./docs/monorepo.md)
 
 **后续**
 
-- [ ] MinerU PDF→Markdown 集成（插件）
+- [ ] MinerU PDF→Markdown 集成（插件，`pip install "lgrlw[mineru]"`）
 - [ ] Zotero 双向同步（插件）
 - [ ] Obsidian graph / Dataview 辅助
-- [ ] MCP server（`query_kb`, `add_literature`, `export_pack`, `promote`, `lint_boundary`）
 - [ ] 只读 Web dashboard（taxonomy、evidence map）
-- [ ] 多方向 monorepo 支持
 
 另见 [open issues](https://github.com/ConmuYan/Research-Wiki/issues) 与 [`CHANGELOG.md`](./CHANGELOG.md)。
 

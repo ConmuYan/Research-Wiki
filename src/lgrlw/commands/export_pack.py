@@ -9,7 +9,7 @@ import typer
 from rich.console import Console
 
 from lgrlw.export.pack import build_export_pack
-from lgrlw.paths import resolve_project
+from lgrlw.monorepo import MonorepoError, resolve_subproject
 
 console = Console()
 
@@ -26,9 +26,23 @@ def export_pack_command(
         Path | None,
         typer.Option("--root", help="Project root (auto-detect if omitted)."),
     ] = None,
+    direction: Annotated[
+        str | None,
+        typer.Option(
+            "--direction",
+            help=(
+                "Monorepo direction slug. Required when --root points at a monorepo "
+                "umbrella; ignored otherwise."
+            ),
+        ),
+    ] = None,
 ) -> None:
     """Emit a ``literature-kb/06_Exports/<workspace>_<date>/`` pack with manifest."""
-    paths = resolve_project(root)
+    try:
+        paths = resolve_subproject(root, direction)
+    except MonorepoError as exc:
+        console.print(f"[red]error[/red] {exc}")
+        raise typer.Exit(code=1) from exc
     try:
         pack_dir = build_export_pack(paths, workspace)
     except FileNotFoundError as exc:

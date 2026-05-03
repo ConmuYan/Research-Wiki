@@ -31,6 +31,7 @@ frontmatter, so rules (2) and (3) do not apply regardless.
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from lgrlw.fs import read_frontmatter
 from lgrlw.paths import ProjectPaths
@@ -120,7 +121,7 @@ def check_boundary(paths: ProjectPaths) -> list[LintFinding]:
     return findings
 
 
-def _is_inside(path, parent) -> bool:
+def _is_inside(path: Path, parent: Path) -> bool:
     try:
         path.relative_to(parent)
     except ValueError:

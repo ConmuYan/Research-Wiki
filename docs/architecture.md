@@ -40,16 +40,19 @@ src/lgrlw/
   cli.py              # Typer app; registers every command
   config.py           # .lgrlw.toml reader/writer
   paths.py            # ProjectPaths, find_project_root, resolve_project
+  monorepo.py         # v0.3 monorepo direction resolution helpers
   fs.py               # sha256, copy_tree, (read|write)_frontmatter
   schemas.py          # pydantic models for frontmatter + manifests
   _resources.py       # locate bundled templates & schemas
   commands/           # one file per CLI subcommand
     init.py
+    add_direction.py
     new_workspace.py
     add_literature.py
     export_pack.py
     promote.py
     lint.py
+    mcp.py
   export/
     pack.py           # build_export_pack -- the snapshot builder
   fetchers/           # v0.2 networked metadata fetchers
@@ -61,6 +64,8 @@ src/lgrlw/
     errors.py
   promote/            # v0.2 workspace -> KB promotion ceremony
     run.py            # promote_workspace -- the atomic promote orchestrator
+  mcp/                # v0.3 optional Model Context Protocol server
+    server.py
   _slug.py            # canonical paper id slug (shared by add-literature & promote)
   lint/               # one rule family per file
     structure.py
@@ -83,6 +88,32 @@ src/lgrlw/
 5. **No state outside the project root.** `lgrlw` only reads/writes under
    the invoked project directory (and, in v0.2, `platformdirs`-provided
    cache paths).
+
+## Multi-direction monorepos (v0.3)
+
+The standard project root remains a single direction. A v0.3 monorepo is an
+umbrella root whose child projects live under `directions/<slug>/`:
+
+```text
+<repo-root>/
+  .lgrlw.toml                 # [project] monorepo = true
+  directions/
+    alpha/
+      .lgrlw.toml
+      literature-kb/
+      research-workspaces/
+    beta/
+      .lgrlw.toml
+      literature-kb/
+      research-workspaces/
+```
+
+Each child is a complete single-direction Research-Wiki project, so lint,
+export, promotion, and add-literature backends keep operating on a normal
+`ProjectPaths`. The only monorepo-aware resolution boundary is
+`lgrlw.monorepo.resolve_subproject`.
+
+See [`monorepo.md`](./monorepo.md).
 
 ## Dependency philosophy
 

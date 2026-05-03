@@ -2,12 +2,14 @@
 
 The CLI is intentionally small:
 
-* ``lgrlw init``              - scaffold a new project
+* ``lgrlw init``              - scaffold a new project (supports ``--monorepo``)
 * ``lgrlw new-workspace``     - create a paper/idea workspace
 * ``lgrlw add-literature``    - register a manual / DOI / arXiv / OpenAlex / S2 literature entry
 * ``lgrlw export-pack``       - snapshot the KB for a workspace
 * ``lgrlw promote``           - promote an accepted workspace paper into the KB
 * ``lgrlw lint``              - verify the three-space invariants
+* ``lgrlw add-direction``     - add a direction to a monorepo umbrella (v0.3)
+* ``lgrlw mcp serve``         - run the Model Context Protocol server (v0.3, optional)
 """
 
 from __future__ import annotations
@@ -17,10 +19,12 @@ from typing import Annotated
 import typer
 
 from lgrlw import __version__
+from lgrlw.commands.add_direction import add_direction_command
 from lgrlw.commands.add_literature import add_literature_command
 from lgrlw.commands.export_pack import export_pack_command
 from lgrlw.commands.init import init_command
 from lgrlw.commands.lint import lint_command
+from lgrlw.commands.mcp import mcp_app
 from lgrlw.commands.new_workspace import new_workspace_command
 from lgrlw.commands.promote import promote_command
 
@@ -36,8 +40,10 @@ app = typer.Typer(
     name="lgrlw",
     help=(
         "Research-Wiki - Literature-Grounded Research Lifecycle Wiki. "
-        f"v{__version__} (init / new-workspace / add-literature / export-pack / promote / lint). "
-        "add-literature supports --manual / --doi / --arxiv / --openalex / --ss."
+        f"v{__version__} (init / new-workspace / add-literature / export-pack / promote / "
+        "lint / add-direction / mcp). "
+        "add-literature supports --manual / --doi / --arxiv / --openalex / --ss. "
+        "init supports --monorepo for multi-direction projects."
     ),
     no_args_is_help=True,
     add_completion=False,
@@ -66,6 +72,11 @@ app.command(
     "lint",
     help="Verify three-space boundary, frontmatter schema, and manifest invariants.",
 )(lint_command)
+app.command(
+    "add-direction",
+    help="Add a research direction subproject to a monorepo umbrella.",
+)(add_direction_command)
+app.add_typer(mcp_app, name="mcp")
 
 
 @app.callback()

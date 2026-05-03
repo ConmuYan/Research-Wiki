@@ -7,6 +7,20 @@ and this project uses semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- `lgrlw init --monorepo`, `lgrlw add-direction`, and `--direction <slug>`
+  selectors on project-scoped commands add multi-direction monorepo support
+  under `directions/<slug>/`. `lgrlw lint` now recursively checks every
+  registered direction when invoked at a monorepo umbrella root.
+- Optional Model Context Protocol server via `pip install "lgrlw[mcp]"`
+  and `lgrlw mcp serve`. The server exposes typed tools for
+  `init_project`, `add_direction`, `new_workspace`, `add_literature`,
+  `export_pack`, `promote`, and `lint`, plus read-only resources for KB
+  papers, workspaces, and project summaries.
+- New documentation: `docs/monorepo.md`, `docs/mcp-server.md`, and
+  `schemas/project_config.schema.json`.
+
 ## [0.2.0] - 2026-05-03
 
 ### Added — Networked literature ingestion
@@ -100,6 +114,26 @@ and this project uses semantic versioning.
   command set (`init` / `new-workspace` / `add-literature` with
   `--manual` + four networked sources / `export-pack` / `promote` /
   `lint`).
+
+### Fixed
+
+- v0.2.0 CI was failing on every matrix entry because `lgrlw lint`
+  reported `manifest.sha256_mismatch` for the demo export pack: text
+  files had been authored on Windows where Python's `Path.write_text`
+  silently translates `\n` into `\r\n`, so the SHA-256 digests recorded
+  in `export_manifest.json` no longer matched the LF bytes git stored
+  on Linux. The fix introduces a repo-wide `.gitattributes`
+  (`* text=auto eol=lf` plus explicit `text eol=lf` for `*.py / *.md /
+  *.yml / *.yaml / *.toml / *.json / *.bib` and `binary` for
+  `*.png / *.jpg / *.pdf / *.ico`), and forces every `Path.write_text`
+  / `path.open("a", ...)` call across `src/lgrlw/fs.py`,
+  `src/lgrlw/export/pack.py`, `src/lgrlw/commands/add_literature.py`,
+  `src/lgrlw/commands/init.py`, `src/lgrlw/config.py`, and
+  `src/lgrlw/promote/run.py` to pass `newline="\n"` explicitly.
+  Combined, KB export packs now have byte-identical SHA-256 hashes
+  across Windows and Linux. `examples/demo_direction/` was renormalised
+  to LF bytes and its export pack regenerated. The `v0.2.0` tag was
+  moved forward to include this fix.
 
 ## [0.1.0] - 2026-05-02
 
