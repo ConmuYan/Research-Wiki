@@ -12,6 +12,8 @@ and this project uses semantic versioning.
 - Development branch for v0.2 networked literature ingestion.
 - `PaperMetadata` schema and Crossref fetcher foundation with mocked HTTP
   tests.
+- `lgrlw add-literature --doi` Crossref ingestion path with CLI-level
+  mocked tests.
 
 ### Changed
 

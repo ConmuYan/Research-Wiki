@@ -1,10 +1,10 @@
 """Typer application exposing the ``lgrlw`` CLI.
 
-The CLI is intentionally small in v0.1:
+The CLI is intentionally small:
 
 * ``lgrlw init``              - scaffold a new project
 * ``lgrlw new-workspace``     - create a paper/idea workspace
-* ``lgrlw add-literature``    - register a manual literature entry
+* ``lgrlw add-literature``    - register a manual or DOI-backed literature entry
 * ``lgrlw export-pack``       - snapshot the KB for a workspace
 * ``lgrlw lint``              - verify the three-space invariants
 """
@@ -34,7 +34,7 @@ app = typer.Typer(
     name="lgrlw",
     help=(
         "Research-Wiki - Literature-Grounded Research Lifecycle Wiki. "
-        f"v{__version__} (MVP: init / new-workspace / add-literature --manual / export-pack / lint)."
+        f"v{__version__} (init / new-workspace / add-literature / export-pack / lint)."
     ),
     no_args_is_help=True,
     add_completion=False,
@@ -49,7 +49,7 @@ app.command(
 )(new_workspace_command)
 app.command(
     "add-literature",
-    help="Register a paper in the KB (v0.1: --manual only).",
+    help="Register a paper in the KB (--manual or --doi).",
 )(add_literature_command)
 app.command(
     "export-pack",

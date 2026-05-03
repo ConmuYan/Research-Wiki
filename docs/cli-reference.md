@@ -1,6 +1,6 @@
 # CLI reference
 
-The `lgrlw` CLI in v0.1 exposes five commands. All commands respect
+The `lgrlw` CLI exposes five commands. All commands respect
 `-h` / `--help` for detailed usage.
 
 ```
@@ -11,11 +11,11 @@ $ lgrlw --help
 |---|---|
 | [`lgrlw init`](#lgrlw-init) | Bootstrap a new Research-Wiki project. |
 | [`lgrlw new-workspace`](#lgrlw-new-workspace) | Create a workspace (paper or idea). |
-| [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (v0.1: `--manual`). |
+| [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual` or `--doi`). |
 | [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
 | [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
 
-Planned for v0.2: `lgrlw promote`; `add-literature --arxiv / --doi / --ss`.
+Planned for later v0.2 work: `lgrlw promote`; `add-literature --arxiv / --ss`.
 
 ---
 
@@ -60,7 +60,7 @@ rendered from the supplied title and `status: drafting`.
 
 ## `lgrlw add-literature`
 
-v0.1: manual entry only.
+Manual entry:
 
 ```
 lgrlw add-literature --manual \
@@ -73,13 +73,23 @@ lgrlw add-literature --manual \
   [--id <slug>] [--force] [--root <project-root>]
 ```
 
+DOI-backed entry via Crossref:
+
+```
+lgrlw add-literature --doi <doi> \
+  [--status published|accepted|preprint] \
+  [--tags "tag1,tag2"] \
+  [--id <slug>] [--force] [--root <project-root>]
+```
+
 | Option | Meaning |
 |---|---|
-| `--manual` | Required in v0.1; asserts this is a hand-entered record. |
-| `--title` / `--authors` / `--year` | Mandatory for manual. |
-| `--venue` | Free-form (e.g. "ICLR 2024", "arXiv preprint"). |
-| `--doi` / `--arxiv` | Validated against the patterns in `lgrlw.schemas`. |
-| `--url` | Canonical URL if different from doi.org / arxiv.org. |
+| `--manual` | Create a hand-entered record. With `--manual`, `--doi` is stored as metadata and does not trigger network fetch. |
+| `--doi` | Without `--manual`, fetch metadata from Crossref for the DOI. With `--manual`, store the DOI on the hand-entered record. |
+| `--title` / `--authors` / `--year` | Mandatory for manual; rejected in DOI fetch mode. |
+| `--venue` | Free-form for manual entries (e.g. "ICLR 2024", "arXiv preprint"); rejected in DOI fetch mode. |
+| `--arxiv` | Manual metadata only; networked arXiv fetch lands later in v0.2. |
+| `--url` | Canonical URL for manual entries; rejected in DOI fetch mode. |
 | `--status` | One of `published` / `accepted` / `preprint`. |
 | `--tags` | Comma-separated tags. |
 | `--id` | Override the auto-generated slug. |
@@ -142,8 +152,7 @@ Exits `0` iff there are no findings. Warnings such as
 
 ## Environment
 
-v0.1 reads **no environment variables** and makes **no network calls**.
-When v0.2 adds networked fetchers, the following env vars will be honoured:
+Networked DOI ingestion honours Crossref's optional contact email. Later v0.2 fetchers will honour their own source-specific environment variables:
 
 - `OPENALEX_EMAIL` &mdash; contact email for polite OpenAlex usage.
 - `S2_API_KEY` &mdash; Semantic Scholar API key.

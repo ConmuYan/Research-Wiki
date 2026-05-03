@@ -1,7 +1,7 @@
 """``lgrlw add-literature`` -- register a new paper in the KB.
 
-v0.1 supports ``--manual`` only. Networked fetchers (``--arxiv`` / ``--doi``
-/ ``--ss``) are scheduled for v0.2 and intentionally not wired up here.
+v0.2 supports manual entries and DOI metadata fetching. Networked fetchers
+remain isolated under ``lgrlw.fetchers``.
 """
 
 from __future__ import annotations
@@ -9,16 +9,17 @@ from __future__ import annotations
 import json
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import typer
 from rich.console import Console
 from slugify import slugify
 
+from lgrlw.fetchers import CrossrefFetcher, FetcherError
 from lgrlw.fs import ensure_dir, write_frontmatter
 from lgrlw.paths import ProjectPaths, resolve_project
 from lgrlw.render.paper_card import render_paper_card
-from lgrlw.schemas import PaperFrontmatter, PaperKind, PaperStatus
+from lgrlw.schemas import PaperFrontmatter, PaperKind, PaperMetadata, PaperStatus
 
 console = Console()
 
@@ -28,7 +29,7 @@ def add_literature_command(
         bool,
         typer.Option(
             "--manual",
-            help=("Required in v0.1. Networked fetchers (--arxiv / --doi / --ss) land in v0.2."),
+            help="Create a hand-entered literature record.",
         ),
     ] = False,
     title: Annotated[str, typer.Option("--title", help="Paper title.")] = "",
@@ -41,12 +42,18 @@ def add_literature_command(
     ] = "",
     year: Annotated[int, typer.Option("--year", help="Publication year.")] = 0,
     venue: Annotated[str | None, typer.Option("--venue", help="Venue or journal.")] = None,
-    doi: Annotated[str | None, typer.Option("--doi", help="DOI (e.g. 10.1000/foo).")] = None,
+    doi: Annotated[
+        str | None,
+        typer.Option(
+            "--doi",
+            help="DOI. With --manual, stored as metadata; without --manual, fetched from Crossref.",
+        ),
+    ] = None,
     arxiv: Annotated[
         str | None,
         typer.Option(
             "--arxiv",
-            help="arXiv id (stored as metadata only in v0.1; not fetched).",
+            help="arXiv id stored as manual metadata. Networked arXiv fetch lands later in v0.2.",
         ),
     ] = None,
     url: Annotated[str | None, typer.Option("--url", help="Canonical URL.")] = None,
@@ -74,14 +81,61 @@ def add_literature_command(
         typer.Option("--root", help="Project root (auto-detect if omitted)."),
     ] = None,
 ) -> None:
-    """Add a manual literature entry to the KB."""
-    if not manual:
-        console.print(
-            "[red]error[/red] v0.1 requires --manual. "
-            "Networked fetchers (--arxiv / --doi / --ss) ship in v0.2."
-        )
-        raise typer.Exit(code=1)
+    """Add a literature entry to the KB."""
+    mode = _select_mode(manual, doi)
+    paths = resolve_project(root)
+    tags_list = _split_csv(tags or "")
 
+    if mode == "manual":
+        fm = _manual_frontmatter(
+            title=title,
+            authors=authors,
+            year=year,
+            venue=venue,
+            doi=doi,
+            arxiv=arxiv,
+            url=url,
+            status=status,
+            tags=tags_list,
+            paper_id=paper_id,
+        )
+        source_label = "manual"
+    else:
+        _reject_doi_mode_overrides(
+            title=title, authors=authors, year=year, venue=venue, arxiv=arxiv, url=url
+        )
+        metadata = _fetch_doi_metadata(doi or "")
+        fm = _fetched_frontmatter(metadata, status=status, tags=tags_list, paper_id=paper_id)
+        source_label = "doi"
+
+    _write_literature_entry(paths, fm, force=force, source_label=source_label)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def _select_mode(manual: bool, doi: str | None) -> Literal["manual", "doi"]:
+    if manual:
+        return "manual"
+    if doi:
+        return "doi"
+    console.print("[red]error[/red] provide a literature source: --manual or --doi")
+    raise typer.Exit(code=1)
+
+
+def _manual_frontmatter(
+    *,
+    title: str,
+    authors: str,
+    year: int,
+    venue: str | None,
+    doi: str | None,
+    arxiv: str | None,
+    url: str | None,
+    status: PaperStatus,
+    tags: list[str],
+    paper_id: str | None,
+) -> PaperFrontmatter:
     missing = [
         flag
         for flag, value in (("--title", title), ("--authors", authors), ("--year", year))
@@ -91,18 +145,15 @@ def add_literature_command(
         console.print(f"[red]error[/red] manual entry requires {', '.join(missing)}")
         raise typer.Exit(code=1)
 
-    paths = resolve_project(root)
-
     authors_list = _split_csv(authors)
     if not authors_list:
         console.print("[red]error[/red] --authors must contain at least one name")
         raise typer.Exit(code=1)
-    tags_list = _split_csv(tags or "")
 
     generated_id = paper_id or _slug_for(authors_list[0], year, title)
 
     try:
-        fm = PaperFrontmatter(
+        return PaperFrontmatter(
             id=generated_id,
             title=title,
             authors=authors_list,
@@ -114,17 +165,101 @@ def add_literature_command(
             status=status,
             source=PaperKind.manual,
             added_on=date.today(),
-            tags=tags_list,
+            tags=tags,
         )
     except ValueError as exc:
         console.print(f"[red]error[/red] invalid paper metadata: {exc}")
         raise typer.Exit(code=1) from exc
 
+
+def _reject_doi_mode_overrides(
+    *,
+    title: str,
+    authors: str,
+    year: int,
+    venue: str | None,
+    arxiv: str | None,
+    url: str | None,
+) -> None:
+    provided = []
+    if title:
+        provided.append("--title")
+    if authors:
+        provided.append("--authors")
+    if year:
+        provided.append("--year")
+    if venue is not None:
+        provided.append("--venue")
+    if arxiv is not None:
+        provided.append("--arxiv")
+    if url is not None:
+        provided.append("--url")
+    if provided:
+        console.print(
+            "[red]error[/red] --doi fetch mode does not accept "
+            f"{', '.join(provided)}; use --manual for hand-entered metadata"
+        )
+        raise typer.Exit(code=1)
+
+
+def _fetch_doi_metadata(doi: str) -> PaperMetadata:
+    fetcher = CrossrefFetcher()
+    try:
+        return fetcher.fetch(doi)
+    except FetcherError as exc:
+        console.print(f"[red]error[/red] DOI fetch failed: {exc}")
+        raise typer.Exit(code=1) from exc
+    finally:
+        fetcher.close()
+
+
+def _fetched_frontmatter(
+    metadata: PaperMetadata,
+    *,
+    status: PaperStatus,
+    tags: list[str],
+    paper_id: str | None,
+) -> PaperFrontmatter:
+    if metadata.year is None:
+        console.print("[red]error[/red] fetched metadata is missing publication year")
+        raise typer.Exit(code=1)
+
+    generated_id = paper_id or _slug_for(metadata.authors[0], metadata.year, metadata.title)
+
+    try:
+        return PaperFrontmatter(
+            id=generated_id,
+            title=metadata.title,
+            authors=metadata.authors,
+            year=metadata.year,
+            venue=metadata.venue,
+            doi=metadata.doi,
+            arxiv_id=metadata.arxiv_id,
+            openalex_id=metadata.openalex_id,
+            semantic_scholar_id=metadata.semantic_scholar_id,
+            url=metadata.url,
+            status=status,
+            source=metadata.source,
+            added_on=date.today(),
+            tags=tags,
+        )
+    except ValueError as exc:
+        console.print(f"[red]error[/red] invalid fetched metadata: {exc}")
+        raise typer.Exit(code=1) from exc
+
+
+def _write_literature_entry(
+    paths: ProjectPaths,
+    fm: PaperFrontmatter,
+    *,
+    force: bool,
+    source_label: str,
+) -> None:
     ensure_dir(paths.kb_papers)
-    paper_path = paths.kb_papers / f"{generated_id}.md"
+    paper_path = paths.kb_papers / f"{fm.id}.md"
     paper_exists = paper_path.exists()
     if paper_exists and not force:
-        console.print(f"[red]error[/red] paper id {generated_id!r} already exists at {paper_path}")
+        console.print(f"[red]error[/red] paper id {fm.id!r} already exists at {paper_path}")
         console.print("       re-run with --force to replace it")
         raise typer.Exit(code=1)
 
@@ -133,23 +268,20 @@ def add_literature_command(
     write_frontmatter(paper_path, frontmatter_dict, body)
 
     ensure_dir(paths.kb_raw_metadata)
-    meta_path = paths.kb_raw_metadata / f"{generated_id}.json"
+    meta_path = paths.kb_raw_metadata / f"{fm.id}.json"
     meta_path.write_text(
         json.dumps(frontmatter_dict, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
 
     action = "replace" if force and paper_exists else "add"
-    _append_log(paths, f"add-literature manual {action} id={generated_id}")
+    _append_log(paths, f"add-literature {source_label} {action} id={fm.id}")
 
-    console.print(f"[green]added[/green] {generated_id}")
+    console.print(f"[green]added[/green] {fm.id}")
     console.print(f"  card     : {paper_path.relative_to(paths.root)}")
     console.print(f"  metadata : {meta_path.relative_to(paths.root)}")
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def _split_csv(raw: str) -> list[str]:
     return [token.strip() for token in raw.split(",") if token.strip()]
 
