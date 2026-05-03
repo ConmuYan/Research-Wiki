@@ -14,6 +14,7 @@ exits non-zero.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated
 
@@ -21,6 +22,13 @@ import typer
 from rich.console import Console
 
 console = Console()
+
+try:
+    from lgrlw.mcp.server import run_stdio_server as _imported_run_stdio_server
+except ImportError:  # pragma: no cover - exercised only when extra missing
+    _RUN_STDIO_SERVER: Callable[[Path | None], None] | None = None
+else:
+    _RUN_STDIO_SERVER = _imported_run_stdio_server
 
 mcp_app = typer.Typer(
     name="mcp",
@@ -55,16 +63,14 @@ def mcp_serve_command(
     workspaces as MCP resources. See ``docs/mcp-server.md`` for the full
     tool/resource catalogue.
     """
-    try:
-        from lgrlw.mcp.server import run_stdio_server
-    except ImportError as exc:  # pragma: no cover - exercised only when extra missing
+    if _RUN_STDIO_SERVER is None:
         console.print(
             "[red]error[/red] the MCP server requires the optional `mcp` package. "
             'install with: pip install "lgrlw[mcp]"'
         )
-        raise typer.Exit(code=1) from exc
+        raise typer.Exit(code=1)
 
-    run_stdio_server(default_root=root)
+    _RUN_STDIO_SERVER(root)
 
 
 __all__ = ["mcp_app", "mcp_serve_command"]
