@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lgrlw"
-version = "0.2.0.dev0"
+version = "0.2.0"
 description = "Literature-Grounded Research Lifecycle Wiki — a long-horizon research operating system with strict KB/Workspace separation and immutable export snapshots."
 readme = "README.md"
 license = { text = "MIT" }
@@ -134,7 +134,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["PLR2004", "S101"]
+# PLR0915 "too many statements" is noise in long, sequential integration
+# tests such as tests/test_e2e_guide.py where the linear flow IS the
+# story being verified.
+"tests/**/*.py" = ["PLR2004", "PLR0915", "S101"]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -7,68 +7,99 @@ and this project uses semantic versioning.
 
 ## [Unreleased]
 
-### Added
+## [0.2.0] - 2026-05-03
 
-- Development branch for v0.2 networked literature ingestion.
-- `PaperMetadata` schema and Crossref fetcher foundation with mocked HTTP
-  tests.
-- `lgrlw add-literature --doi` Crossref ingestion path with CLI-level
-  mocked tests.
-- `ArxivFetcher` using the arXiv Atom API, plus
-  `lgrlw add-literature --arxiv` ingestion path with CLI-level mocked
-  tests. `--manual --arxiv` still stores the id as hand-entered metadata
-  without performing a network call.
-- `OpenAlexFetcher` using the OpenAlex Works API, plus
-  `lgrlw add-literature --openalex` ingestion path with CLI-level mocked
-  tests. The fetcher honours the `OPENALEX_EMAIL` polite-pool
-  environment variable, normalises `https://openalex.org/W…` URLs, and
-  is mutually exclusive with `--doi` / `--arxiv` outside manual mode.
-  `--manual --openalex` still stores the id as hand-entered metadata
-  without performing a network call.
-- `OPENALEX_ID_PATTERN` schema constraint plus mirrored `pattern`
-  property in `schemas/paper.schema.json` and
-  `schemas/paper_metadata.schema.json`, validating `openalex_id`
-  fields end-to-end.
-- `lgrlw promote` command implementing the full v0.2 promotion
-  ceremony from `docs/promotion-protocol.md`. It enforces every
-  precondition (`paper_status.md` frontmatter status / promotion
-  fields / identifiers, `06_Promotion/final_metadata.md` URL or PDF
-  reference, fully ticked `promotion_checklist.md`,
-  bullet-listed `add_back_to_kb_plan.md`) and only then writes a
-  paper card (`source: promoted`), metadata snapshot, BibTeX entry
-  (`@inproceedings` / `@misc`) and a log line. Writes are
-  rolled back on failure so promotion stays all-or-nothing.
-  Taxonomy / evidence updates from `add_back_to_kb_plan.md` remain
-  a manual follow-up (the command prints a reminder).
-- `templates/research-workspace/paper/06_Promotion/promotion_checklist.md`
-  rewritten as a real `- [ ]` task list so `lgrlw promote` can parse
-  and validate completion.
-- Shared `lgrlw._slug.paper_slug` helper used by both
-  `lgrlw add-literature` and `lgrlw promote`, ensuring a paper id
-  stays stable whether the entry was hand-registered or promoted
-  from an accepted workspace.
-- `lgrlw add-literature --ss` ingestion path via the Semantic Scholar
-  Graph API (`https://api.semanticscholar.org/graph/v1/paper`). The
-  new `SemanticScholarFetcher` accepts the full range of identifier
-  forms the S2 API recognises: a bare 40-char `paperId`, a Semantic
-  Scholar paper URL (with or without the human slug / query string),
+### Added — Networked literature ingestion
+
+- `PaperMetadata` schema modelling canonical metadata returned by every
+  networked fetcher, backed by a `BaseFetcher` abstract interface and
+  shared `FetcherError` / `FetcherNotFoundError` hierarchy.
+- `CrossrefFetcher` and `lgrlw add-literature --doi` for DOI-backed
+  ingestion via the Crossref REST API. Honours the `CROSSREF_MAILTO`
+  polite-pool environment variable.
+- `ArxivFetcher` and `lgrlw add-literature --arxiv` for arXiv Atom-API
+  ingestion, accepting both bare ids (`2310.11511`) and abstract URLs.
+- `OpenAlexFetcher` and `lgrlw add-literature --openalex` for the
+  OpenAlex Works endpoint, accepting bare Work ids (`W4385545131`) and
+  `https://openalex.org/W…` URLs. Honours the `OPENALEX_EMAIL`
+  polite-pool environment variable.
+- `SemanticScholarFetcher` and `lgrlw add-literature --ss` for the
+  Semantic Scholar Graph API. Accepts the full range of identifier
+  forms the S2 API recognises: a bare 40-hex `paperId`, a Semantic
+  Scholar paper URL (with or without human slug / query string),
   prefixed aliases (`DOI:` / `ARXIV:` / `CorpusId:` / `MAG:` / `ACL:`
-  / `PMID:` / `URL:`), and bare DOIs / arXiv ids (auto-wrapped to
-  `DOI:` / `ARXIV:` before the request). Respects the `S2_API_KEY`
-  environment variable for the polite-pool `x-api-key` header and
-  reports HTTP 429 with a hint pointing at `S2_API_KEY`. `--ss` is
-  mutually exclusive with `--doi` / `--arxiv` / `--openalex` outside
-  manual mode; `--manual --ss <paperId>` still records the id without
-  a network call and enforces the 40-hex `paperId` format.
-- `SEMANTIC_SCHOLAR_ID_PATTERN` schema constraint plus mirrored
-  `pattern` property in `schemas/paper.schema.json` and
-  `schemas/paper_metadata.schema.json`, validating
-  `semantic_scholar_id` fields end-to-end.
+  / `PMID:` / `PMCID:` / `URL:`), and bare DOIs / arXiv ids
+  (auto-wrapped to `DOI:` / `ARXIV:` before the request). Honours the
+  `S2_API_KEY` environment variable for the polite-pool `x-api-key`
+  header and surfaces HTTP 429 with a hint pointing at `S2_API_KEY`.
+- `--doi` / `--arxiv` / `--openalex` / `--ss` are mutually exclusive
+  outside `--manual` mode. Under `--manual`, each identifier flag
+  stores the value as hand-entered metadata without a network call
+  and is still validated by the schema patterns below.
+- `OPENALEX_ID_PATTERN` and `SEMANTIC_SCHOLAR_ID_PATTERN` schema
+  constraints, with mirrored `pattern` properties on `openalex_id` /
+  `semantic_scholar_id` in `schemas/paper.schema.json` and
+  `schemas/paper_metadata.schema.json`. Every identifier is validated
+  end-to-end by both pydantic and JSON Schema.
+- Every fetcher ships with a `respx`-mocked CLI-level test suite
+  covering the happy path, HTTP 404 / 429 / malformed JSON failures,
+  polite-pool env-var forwarding, and mutual-exclusion rules.
+
+### Added — Promotion ceremony
+
+- `lgrlw promote <workspace>` implementing the v0.2 promotion
+  ceremony from `docs/promotion-protocol.md`. Enforces every
+  precondition read-only before any write:
+  - `00_Project/paper_status.md` frontmatter has
+    `status: accepted` plus non-null `final_title`, `final_authors`,
+    `venue`, `year`, and at least one of `doi` or `arxiv_id`;
+  - `06_Promotion/final_metadata.md` references a camera-ready PDF
+    path or public-version URL;
+  - `06_Promotion/promotion_checklist.md` has every `- [ ]`
+    converted to `- [x]` and contains at least one tick;
+  - `06_Promotion/add_back_to_kb_plan.md` lists at least one
+    intended field-structure / evidence-map / method-taxonomy edit
+    as a `- ` bullet.
+- On success, promotion atomically emits:
+  - a paper card at `literature-kb/02_Literature/Papers/<id>.md`
+    with `source: promoted` and `status: accepted`;
+  - a metadata snapshot at `literature-kb/01_Raw/metadata/<id>.json`;
+  - an auto-generated BibTeX entry at
+    `literature-kb/01_Raw/bibtex/<id>.bib` (`@inproceedings` when
+    `venue` is set, `@misc` otherwise);
+  - an audit line in `literature-kb/00_System/log.md`.
+- Taxonomy / evidence updates listed in
+  `06_Promotion/add_back_to_kb_plan.md` remain a deliberate manual
+  follow-up; the command prints a yellow reminder but never
+  auto-edits `03_Field_Structure/` or `05_Evidence/`.
+- Writes are rolled back on any OSError mid-flight so promotion
+  stays all-or-nothing.
+- `--id` overrides the auto-generated slug; `--force` replaces an
+  existing paper card / metadata / BibTeX with the same id.
+- `templates/research-workspace/paper/06_Promotion/promotion_checklist.md`
+  rewritten as a real GitHub-style `- [ ]` task list so
+  `lgrlw promote` can parse and validate completion.
+
+### Added — Internals
+
+- Shared `lgrlw._slug.paper_slug(first_author, year, title)` helper
+  used by both `lgrlw add-literature` and `lgrlw promote`, ensuring
+  a paper id stays stable whether the entry was hand-registered,
+  fetched, or promoted from an accepted workspace.
+- End-to-end guide-style integration test
+  (`tests/test_e2e_guide.py`) that walks the exact README Quick Start
+  sequence (init → new-workspace → four `add-literature` invocations
+  → export-pack → seed preconditions → promote → lint) and fails
+  loudly if any step of the documented flow regresses.
 
 ### Changed
 
-- CI now builds distributions and runs `twine check` on every test matrix
-  entry.
+- CI now builds distributions and runs `twine check` on every test
+  matrix entry.
+- `lgrlw` CLI help text and `--version` both advertise the full v0.2
+  command set (`init` / `new-workspace` / `add-literature` with
+  `--manual` + four networked sources / `export-pack` / `promote` /
+  `lint`).
 
 ## [0.1.0] - 2026-05-02
 
