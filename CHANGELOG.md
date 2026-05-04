@@ -7,6 +7,27 @@ and this project uses semantic versioning.
 
 ## [Unreleased]
 
+### Added — PDF attachment to existing KB papers (v0.4.x series)
+
+- `lgrlw attach-pdf` with two deterministic modes. Explicit mode
+  (`lgrlw attach-pdf <pdf> --id <paper-id>`) archives a single PDF.
+  Scan mode (`--scan-dir <dir>` or `--scan-incoming` for the canonical
+  inbox at `literature-kb/01_Raw/pdf/_incoming/`) walks a directory
+  and matches each PDF against existing KB papers by filename:
+  paper-id substring → arXiv id → flattened DOI. No fuzzy title
+  matching yet; that is reserved for a later release.
+- `--move` optionally deletes the source PDF after a successful
+  archive; `--force-pdf` replaces an existing archived PDF.
+- MCP `attach_pdf` tool mirrors the CLI with
+  `paper_id`/`pdf_path`/`scan_dir`/`scan_incoming`/`force_pdf`/`move`
+  arguments and returns per-PDF `outcomes` plus a `counts` summary.
+- New `lgrlw.ingest.attach` module exports `build_kb_index`,
+  `match_pdf_to_paper`, `attach_single`, and `attach_scan` for reuse
+  by future agent workflows.
+- Every archive appends a canonical
+  `YYYY-MM-DDTHH:MM:SSZ attach-pdf <reason> id=<paper-id> src=<name>`
+  line to `literature-kb/00_System/log.md`.
+
 ### Added — Batch BibTeX ingestion (v0.4 series)
 
 - `lgrlw import-bib <bib-file>` batch-creates KB paper cards from a

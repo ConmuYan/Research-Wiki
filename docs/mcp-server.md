@@ -34,6 +34,7 @@ The server exposes tools that mirror the CLI backend. Every tool returns a JSON-
 | `promote` | Promote an accepted workspace paper into the KB. |
 | `lint` | Run structure/schema/boundary/manifest lint. |
 | `import_bib` | Batch-create paper cards from a BibTeX file. Offline, reuses `add_literature` per entry, returns a manifest (v0.4). |
+| `attach_pdf` | Archive a local PDF against an existing KB paper. Explicit mode (`paper_id` + `pdf_path`) or scan mode (`scan_dir` / `scan_incoming`). Offline (v0.4.x). |
 
 ### Root and direction selection
 
@@ -75,6 +76,25 @@ When `pdf_path` is supplied, the tool result includes `pdf_archive` with the arc
 | `root` / `direction` | string | Standard project-root / monorepo selectors. |
 
 The tool result contains `run_id`, `manifest_path`, `source_bib` (archived copy), `counts`, and the full `entries` list — one row per BibTeX entry. Failures in a single entry surface as `status=skipped_error` rather than a tool error; a bib parse error or the `fail` on-duplicate guard raises a tool error instead.
+
+### `attach_pdf` arguments
+
+`attach_pdf` mirrors [`lgrlw attach-pdf`](./cli-reference.md#lgrlw-attach-pdf). Use it either as:
+
+- **Explicit mode** — pass `paper_id` and `pdf_path`. The PDF is copied verbatim to `literature-kb/01_Raw/pdf/<paper_id>.pdf`.
+- **Scan mode** — pass `scan_dir` *or* `scan_incoming=true` (never both). Every `*.pdf` in the directory is matched against existing KB papers by filename (paper-id substring → arXiv id → flattened DOI) and archived on match. Unmatched PDFs are returned with `status="unmatched"` and left in place.
+
+| Argument | Type | Notes |
+|---|---|---|
+| `paper_id` | string | KB paper id (explicit mode only). |
+| `pdf_path` | string | Local path to the PDF (explicit mode only). |
+| `scan_dir` | string | Directory to scan (scan mode only). |
+| `scan_incoming` | bool | Scan `literature-kb/01_Raw/pdf/_incoming/` (scan mode only). |
+| `force_pdf` | bool | Replace an existing archived PDF with the same paper id. |
+| `move` | bool | Delete source PDFs after successful archive. |
+| `root` / `direction` | string | Standard project-root / monorepo selectors. |
+
+The tool result contains `mode` (`"explicit"` / `"scan"`), `outcomes` (a list of per-PDF records with `status` ∈ `{archived, already_attached, unmatched, skipped_error}`), and, in scan mode, `scan_dir` and `counts`.
 
 ## Resources
 

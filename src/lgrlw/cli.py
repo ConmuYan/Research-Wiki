@@ -10,6 +10,8 @@ The CLI is intentionally small:
 * ``lgrlw lint``              - verify the three-space invariants
 * ``lgrlw add-direction``     - add a direction to a monorepo umbrella (v0.3)
 * ``lgrlw mcp serve``         - run the Model Context Protocol server (v0.3, optional)
+* ``lgrlw import-bib``        - batch-create paper cards from a BibTeX file (v0.4)
+* ``lgrlw attach-pdf``        - attach a local PDF to an existing KB paper (v0.4.x)
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ import typer
 from lgrlw import __version__
 from lgrlw.commands.add_direction import add_direction_command
 from lgrlw.commands.add_literature import add_literature_command
+from lgrlw.commands.attach_pdf import attach_pdf_command
 from lgrlw.commands.export_pack import export_pack_command
 from lgrlw.commands.import_bib import import_bib_command
 from lgrlw.commands.init import init_command
@@ -81,6 +84,13 @@ app.command(
     "import-bib",
     help="Batch-create KB paper cards from a BibTeX file (v0.4).",
 )(import_bib_command)
+app.command(
+    "attach-pdf",
+    help=(
+        "Attach a local PDF to an existing KB paper, explicitly or by scanning a "
+        "directory (v0.4.x)."
+    ),
+)(attach_pdf_command)
 app.add_typer(mcp_app, name="mcp")
 
 

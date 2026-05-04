@@ -13,6 +13,7 @@ $ lgrlw --help
 | [`lgrlw new-workspace`](#lgrlw-new-workspace) | Create a workspace (paper or idea). |
 | [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual`, `--doi`, `--arxiv`, `--openalex`, or `--ss`). |
 | [`lgrlw import-bib`](#lgrlw-import-bib) | Batch-create paper cards from a BibTeX file (v0.4). |
+| [`lgrlw attach-pdf`](#lgrlw-attach-pdf) | Archive a local PDF against an existing KB paper (v0.4.x). |
 | [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
 | [`lgrlw promote`](#lgrlw-promote) | Promote an accepted workspace paper into the KB. |
 | [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
@@ -189,6 +190,47 @@ pip install "lgrlw[bib]"
 
 See [`import-bib.md`](./import-bib.md) for the full protocol, manifest
 schema, and exit-code semantics.
+
+---
+
+## `lgrlw attach-pdf`
+
+Archive a local PDF against an existing KB paper. Two modes:
+
+```
+# explicit: paper-id + PDF path
+lgrlw attach-pdf ./papers/self-rag.pdf --id asai-2023-self-rag \
+  [--force-pdf] [--move] [--root <project-root>] [--direction <slug>]
+
+# scan: walk a directory and auto-match by filename
+lgrlw attach-pdf --scan-dir ./downloads [--force-pdf] [--move] \
+  [--root <project-root>] [--direction <slug>]
+
+# scan-incoming: shortcut for literature-kb/01_Raw/pdf/_incoming/
+lgrlw attach-pdf --scan-incoming [--force-pdf] [--move] \
+  [--root <project-root>] [--direction <slug>]
+```
+
+| Option | Meaning |
+|---|---|
+| `pdf` (positional) | Local PDF path. Required in explicit mode, rejected in scan mode. |
+| `--id <paper-id>` | KB paper id. Required in explicit mode. |
+| `--scan-dir <dir>` | Scan the directory for `*.pdf` files (non-recursive). |
+| `--scan-incoming` | Shortcut for scanning `literature-kb/01_Raw/pdf/_incoming/`. Mutually exclusive with `--scan-dir`. |
+| `--force-pdf` | Replace an existing archived PDF for the same paper id. |
+| `--move` | Delete the source PDF after a successful archive (non-fatal on failure). |
+| `--root` / `--direction` | Project-root / monorepo selectors. |
+
+**Matcher (scan modes).** Filename (stem, lowercased) is matched against
+existing KB papers in this order: paper-id substring → arXiv id → DOI
+(flattened to alphanumerics). No fuzzy title matching in v0.4.x.
+
+**Output.**
+
+- Copies the PDF to `literature-kb/01_Raw/pdf/<paper_id>.pdf`.
+- Appends an `attach-pdf` line to `literature-kb/00_System/log.md`.
+- Returns a status table; exit code is non-zero only when at least one
+  entry is `skipped_error`. `unmatched` scan results are informational.
 
 ---
 

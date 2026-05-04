@@ -50,6 +50,8 @@ async def test_mcp_stdio_exposes_tools_and_resources(
             "export_pack",
             "promote",
             "lint",
+            "import_bib",
+            "attach_pdf",
         }.issubset(tool_names)
 
         created_root = tmp_path / "created_by_mcp"
@@ -144,6 +146,45 @@ async def test_mcp_stdio_exposes_tools_and_resources(
             / "bengio-2013-representation-learning-a-review-and-new-perspec.md"
         )
         assert expected_bengio.is_file()
+
+        # attach_pdf: explicit mode + scan mode.
+        bengio_pdf = tmp_path / "bengio.pdf"
+        bengio_pdf.write_bytes(b"%PDF-1.4\nbengio explicit\n")
+        attach_explicit = await session.call_tool(
+            "attach_pdf",
+            {
+                "paper_id": "bengio-2013-representation-learning-a-review-and-new-perspec",
+                "pdf_path": str(bengio_pdf),
+                "direction": "beta",
+            },
+        )
+        assert_ok(attach_explicit)
+        attach_explicit_payload = json.loads(attach_explicit.content[0].text)
+        assert attach_explicit_payload["mode"] == "explicit"
+        assert attach_explicit_payload["outcomes"][0]["status"] == "archived"
+        assert (
+            beta
+            / "literature-kb"
+            / "01_Raw"
+            / "pdf"
+            / "bengio-2013-representation-learning-a-review-and-new-perspec.pdf"
+        ).is_file()
+
+        inbox = beta / "literature-kb" / "01_Raw" / "pdf" / "_incoming"
+        inbox.mkdir(parents=True, exist_ok=True)
+        (inbox / "lovelace-2024-tool-agents.pdf").write_bytes(b"%PDF-1.4\nscanned\n")
+        attach_scan_result = await session.call_tool(
+            "attach_pdf",
+            {"scan_incoming": True, "move": True, "direction": "beta"},
+        )
+        assert_ok(attach_scan_result)
+        attach_scan_payload = json.loads(attach_scan_result.content[0].text)
+        assert attach_scan_payload["mode"] == "scan"
+        assert attach_scan_payload["counts"]["archived"] == 1
+        assert (
+            beta / "literature-kb" / "01_Raw" / "pdf" / "lovelace-2024-tool-agents.pdf"
+        ).is_file()
+        assert not (inbox / "lovelace-2024-tool-agents.pdf").exists()
 
         lint_result = await session.call_tool("lint", {})
         assert_ok(lint_result)

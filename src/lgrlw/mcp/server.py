@@ -34,6 +34,7 @@ from lgrlw.config import dump_config, load_config
 from lgrlw.export.pack import build_export_pack
 from lgrlw.fs import copy_tree, read_frontmatter, write_frontmatter
 from lgrlw.ingest import BibtexParseError
+from lgrlw.ingest.attach import AttachOutcome, attach_scan, attach_single
 from lgrlw.ingest.run import ImportBibError, ImportBibRequest, run_import_bib
 from lgrlw.lint import format_findings, run_all
 from lgrlw.monorepo import (
@@ -435,6 +436,76 @@ def create_server(default_root: Path | None = None) -> FastMCP:
             "entries": [entry.model_dump(mode="json") for entry in result.manifest.entries],
         }
 
+    @server.tool(
+        name="attach_pdf",
+        title="Attach PDF to KB paper",
+        description=(
+            "Attach a local PDF to an existing KB paper. Two modes: explicit (paper_id + "
+            "pdf_path) or scan (scan_dir or scan_incoming=True auto-matches filenames "
+            "against existing KB paper-ids / arXiv ids / DOIs). Offline and local-only."
+        ),
+        structured_output=True,
+    )
+    def attach_pdf(
+        paper_id: str | None = None,
+        pdf_path: str | None = None,
+        scan_dir: str | None = None,
+        scan_incoming: bool = False,
+        force_pdf: bool = False,
+        move: bool = False,
+        root: str | None = None,
+        direction: str | None = None,
+    ) -> dict[str, Any]:
+        paths = _resolve_paths(root, direction, default_root)
+
+        # Explicit mode.
+        if paper_id is not None or pdf_path is not None:
+            if paper_id is None or pdf_path is None:
+                raise ValueError("paper_id requires pdf_path, and vice versa")
+            if scan_dir is not None or scan_incoming:
+                raise ValueError("explicit mode is incompatible with scan_dir / scan_incoming")
+            outcome = attach_single(
+                paths,
+                paper_id=paper_id,
+                pdf_path=Path(pdf_path),
+                force_pdf=force_pdf,
+                remove_source=move,
+            )
+            return {
+                "ok": outcome.status != "skipped_error",
+                "root": str(paths.root),
+                "mode": "explicit",
+                "outcomes": [_attach_outcome_payload(outcome)],
+            }
+
+        # Scan mode.
+        if scan_incoming and scan_dir is not None:
+            raise ValueError("scan_dir and scan_incoming are mutually exclusive")
+        resolved_dir = (
+            paths.kb_raw_pdf_incoming if scan_incoming else (Path(scan_dir) if scan_dir else None)
+        )
+        if resolved_dir is None:
+            raise ValueError("provide paper_id+pdf_path, or scan_dir, or scan_incoming=True")
+
+        try:
+            results = attach_scan(
+                paths,
+                resolved_dir,
+                force_pdf=force_pdf,
+                remove_source=move,
+            )
+        except FileNotFoundError as exc:
+            raise ValueError(str(exc)) from exc
+
+        return {
+            "ok": not any(r.status == "skipped_error" for r in results),
+            "root": str(paths.root),
+            "mode": "scan",
+            "scan_dir": str(resolved_dir),
+            "outcomes": [_attach_outcome_payload(r) for r in results],
+            "counts": _attach_counts(results),
+        }
+
     @server.resource(
         "lgrlw://project/summary",
         name="project_summary",
@@ -511,6 +582,32 @@ def create_server(default_root: Path | None = None) -> FastMCP:
 def run_stdio_server(default_root: Path | None = None) -> None:
     """Run the Research-Wiki MCP server over stdio."""
     create_server(default_root=default_root).run(transport="stdio")
+
+
+def _attach_outcome_payload(outcome: AttachOutcome) -> dict[str, Any]:
+    """Serialise an :class:`AttachOutcome` for MCP transport."""
+    return {
+        "source": str(outcome.source),
+        "paper_id": outcome.paper_id,
+        "archived": str(outcome.archived) if outcome.archived is not None else None,
+        "reason": outcome.reason,
+        "status": outcome.status,
+        "error": outcome.error,
+    }
+
+
+def _attach_counts(outcomes: list[AttachOutcome]) -> dict[str, int]:
+    """Summarise attach outcomes by status plus a total."""
+    counts: dict[str, int] = {
+        "archived": 0,
+        "already_attached": 0,
+        "unmatched": 0,
+        "skipped_error": 0,
+    }
+    for outcome in outcomes:
+        counts[outcome.status] = counts.get(outcome.status, 0) + 1
+    counts["total"] = len(outcomes)
+    return counts
 
 
 def _project_root(root: str | None, default_root: Path | None) -> Path:
