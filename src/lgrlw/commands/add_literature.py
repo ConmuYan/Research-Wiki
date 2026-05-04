@@ -118,6 +118,16 @@ def add_literature_command(
             help="Overwrite an existing archived PDF with the same paper id.",
         ),
     ] = False,
+    allow_network_pdf: Annotated[
+        bool,
+        typer.Option(
+            "--allow-network-pdf",
+            help=(
+                "Opt in to downloading the PDF from arXiv when no --pdf is given "
+                "and an arxiv id is available. No other hosts are contacted."
+            ),
+        ),
+    ] = False,
     root: Annotated[
         Path | None,
         typer.Option("--root", help="Project root (auto-detect if omitted)."),
@@ -208,6 +218,13 @@ def add_literature_command(
         source_label = "ss"
 
     pdf_archive = _archive_pdf(paths, fm.id, pdf, force_pdf=force_pdf)
+    if pdf_archive is None and allow_network_pdf and fm.arxiv_id:
+        pdf_archive = _download_and_archive_arxiv_pdf(
+            paths,
+            paper_id=fm.id,
+            arxiv_id=fm.arxiv_id,
+            force_pdf=force_pdf,
+        )
     _write_literature_entry(
         paths,
         fm,
@@ -416,6 +433,41 @@ def _fetched_frontmatter(
     except ValueError as exc:
         console.print(f"[red]error[/red] invalid fetched metadata: {exc}")
         raise typer.Exit(code=1) from exc
+
+
+def _download_and_archive_arxiv_pdf(
+    paths: ProjectPaths,
+    *,
+    paper_id: str,
+    arxiv_id: str,
+    force_pdf: bool,
+) -> Path | None:
+    """Fetch ``arxiv_id`` over the network and archive it for ``paper_id``.
+
+    Mirrors the safety rules of :func:`_archive_pdf`: the destination is
+    never overwritten unless ``force_pdf`` is true. Any download failure
+    is surfaced as a :class:`typer.Exit` with a human-readable message
+    so batch wrappers can decide whether to continue.
+    """
+    from lgrlw.ingest.pdf_download import PdfDownloadError, fetch_arxiv_pdf
+
+    ensure_dir(paths.kb_raw_pdf)
+    destination = paths.kb_raw_pdf / f"{paper_id}.pdf"
+    if destination.exists() and not force_pdf:
+        console.print(
+            f"[red]error[/red] archived PDF already exists at {destination}; "
+            "re-run with --force-pdf to replace it"
+        )
+        raise typer.Exit(code=1)
+
+    try:
+        result = fetch_arxiv_pdf(arxiv_id, allow_network_pdf=True)
+    except PdfDownloadError as exc:
+        console.print(f"[red]error[/red] arxiv PDF download failed: {exc}")
+        raise typer.Exit(code=1) from exc
+
+    destination.write_bytes(result.content)
+    return destination
 
 
 def _archive_pdf(

@@ -40,7 +40,7 @@ class ImportEntry(BaseModel):
     year: int | None = None
     venue: str | None = None
     paper_id: str | None = None
-    pdf_source: Literal["local", "none"] = "none"
+    pdf_source: Literal["local", "network", "none"] = "none"
     pdf_archive: str | None = None
     status: ImportEntryStatus
     error: str | None = None

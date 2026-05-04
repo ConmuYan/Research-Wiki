@@ -94,6 +94,16 @@ def import_bib_command(
             help="Comma-separated tags applied to every created paper card.",
         ),
     ] = None,
+    allow_network_pdf: Annotated[
+        bool,
+        typer.Option(
+            "--allow-network-pdf",
+            help=(
+                "Opt in to downloading PDFs from arXiv for entries that carry an "
+                "arxiv_id but do not resolve locally. No other hosts are contacted."
+            ),
+        ),
+    ] = False,
 ) -> None:
     """Create KB paper cards for every entry in a BibTeX file."""
     normalised = on_duplicate.lower()
@@ -117,6 +127,7 @@ def import_bib_command(
         default_status=default_status,
         tags=tag_list,
         direction=direction,
+        allow_network_pdf=allow_network_pdf,
     )
 
     try:

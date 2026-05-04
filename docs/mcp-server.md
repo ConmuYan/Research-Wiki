@@ -62,6 +62,8 @@ Those modes use the same fetchers and environment variables as the CLI: `CROSSRE
 
 When `pdf_path` is supplied, the tool result includes `pdf_archive` with the archived path; otherwise `pdf_archive` is `null`.
 
+`add_literature` and `import_bib` both accept an optional `allow_network_pdf` flag (v0.5.x). When set and an `arxiv_id` is present, the server downloads the PDF from `https://arxiv.org/pdf/<id>.pdf` and archives it verbatim. Only `arxiv.org` / `export.arxiv.org` are contacted; redirects to any other host are rejected.
+
 ### `import_bib` arguments
 
 `import_bib` is the batch counterpart of `add_literature` and mirrors the CLI in [`import-bib.md`](./import-bib.md). It requires the optional `bib` extra (`pip install "lgrlw[bib]"`).

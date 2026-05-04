@@ -7,6 +7,26 @@ and this project uses semantic versioning.
 
 ## [Unreleased]
 
+### Added — Opt-in network PDF downloads (v0.5.x series)
+
+- `--allow-network-pdf` flag on `lgrlw add-literature` and
+  `lgrlw import-bib`. When set, the corresponding `arxiv_id` (either
+  supplied explicitly or parsed from BibTeX) triggers a one-shot
+  download from `https://arxiv.org/pdf/<id>.pdf` and the bytes are
+  archived at `literature-kb/01_Raw/pdf/<paper_id>.pdf`. No other
+  hosts are contacted; no HTML is followed.
+- MCP `add_literature` and `import_bib` tools gain matching
+  `allow_network_pdf` arguments.
+- New `lgrlw.ingest.pdf_download` module with typed errors
+  (`PdfDownloadDisallowedError`, `PdfDownloadForbiddenHostError`)
+  plus the deliberately tiny whitelist accessor `allowed_hosts()`.
+- `import_manifest.schema.json` now admits `pdf_source="network"`,
+  so audit rows distinguish between local matches and opt-in
+  downloads.
+- All network I/O in the new module goes through a single `httpx`
+  entry point (`_fetch`) that is covered end-to-end by `respx`
+  mocks — still no real network calls in CI.
+
 ### Added — PDF-to-Markdown conversion (v0.5 series)
 
 - `lgrlw convert-pdf <paper-id>` and `--all` render archived PDFs under

@@ -50,7 +50,7 @@
         "year": {"type": ["integer", "null"]},
         "venue": {"type": ["string", "null"]},
         "paper_id": {"type": ["string", "null"]},
-        "pdf_source": {"enum": ["local", "none"]},
+        "pdf_source": {"enum": ["local", "network", "none"]},
         "pdf_archive": {"type": ["string", "null"]},
         "status": {
           "enum": [

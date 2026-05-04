@@ -20,6 +20,7 @@ from mcp.server.fastmcp import FastMCP
 from lgrlw._resources import templates_root
 from lgrlw.commands.add_literature import (
     _archive_pdf,
+    _download_and_archive_arxiv_pdf,
     _fetch_arxiv_metadata,
     _fetch_doi_metadata,
     _fetch_openalex_metadata,
@@ -241,6 +242,7 @@ def create_server(default_root: Path | None = None) -> FastMCP:
         force: bool = False,
         pdf_path: str | None = None,
         force_pdf: bool = False,
+        allow_network_pdf: bool = False,
         root: str | None = None,
         direction: str | None = None,
     ) -> dict[str, Any]:
@@ -300,6 +302,17 @@ def create_server(default_root: Path | None = None) -> FastMCP:
             pdf_archive = _archive_pdf(paths, fm.id, pdf, force_pdf=force_pdf)
         except typer.Exit as exc:
             raise ValueError("invalid pdf attachment") from exc
+
+        if pdf_archive is None and allow_network_pdf and fm.arxiv_id:
+            try:
+                pdf_archive = _download_and_archive_arxiv_pdf(
+                    paths,
+                    paper_id=fm.id,
+                    arxiv_id=fm.arxiv_id,
+                    force_pdf=force_pdf,
+                )
+            except typer.Exit as exc:
+                raise ValueError("arxiv pdf download failed") from exc
 
         _write_literature_entry(
             paths,
@@ -411,6 +424,7 @@ def create_server(default_root: Path | None = None) -> FastMCP:
         on_duplicate: Literal["skip", "force", "fail"] = "skip",
         default_status: PaperStatusName = "published",
         tags: str | None = None,
+        allow_network_pdf: bool = False,
     ) -> dict[str, Any]:
         paths = _resolve_paths(root, direction, default_root)
         request = ImportBibRequest(
@@ -421,6 +435,7 @@ def create_server(default_root: Path | None = None) -> FastMCP:
             default_status=PaperStatus(default_status),
             tags=tuple(_split_csv(tags or "")),
             direction=direction,
+            allow_network_pdf=allow_network_pdf,
         )
         try:
             result = run_import_bib(paths, request)

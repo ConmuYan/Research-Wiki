@@ -145,6 +145,7 @@ API in `semantic_scholar_id`.
 | `--force` | Replace an existing paper card and metadata with the same id. Without this flag, duplicate ids fail. |
 | `--pdf` | Optional path to a local `.pdf` file. The file is copied verbatim to `literature-kb/01_Raw/pdf/<id>.pdf`; no network call is made and the source file is not modified. Works with every mode (`--manual`, `--doi`, `--arxiv`, `--openalex`, `--ss`). |
 | `--force-pdf` | Replace an existing archived PDF with the same paper id. Required even together with `--force`; `--force` alone will not overwrite PDFs. |
+| `--allow-network-pdf` | Opt in to downloading the PDF from arXiv when no `--pdf` is given and an arxiv id is available. Only `arxiv.org` / `export.arxiv.org` are contacted; any other redirect is refused (v0.5.x). |
 | `--root` | Existing Research-Wiki project root (auto-detected if omitted). |
 | `--direction` | Monorepo direction slug when `--root` points at a monorepo umbrella. |
 
@@ -180,7 +181,8 @@ lgrlw import-bib <bib-file> \
 | `--dry-run` | Parse and plan without writing anything. |
 | `--on-duplicate skip\|force\|fail` | How to treat entries whose identifiers already exist in the KB. `fail` aborts the whole batch before any write. |
 | `--default-status` | Publication status applied to every card (`published` / `accepted` / `preprint`). |
-| `--tags` | Comma-separated tags applied to every card. |
+| `--tags` | Comma-separated tags applied to every created card. |
+| `--allow-network-pdf` | Opt in to downloading PDFs from arXiv for entries that carry an arxiv id but do not resolve locally. Only `arxiv.org` is contacted (v0.5.x). |
 | `--root` / `--direction` | Project-root / monorepo-direction selectors. |
 
 Requires the optional `bib` extra:

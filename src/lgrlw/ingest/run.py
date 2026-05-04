@@ -46,6 +46,7 @@ class ImportBibRequest:
     tags: tuple[str, ...] = ()
     direction: str | None = None
     force_pdf: bool = False
+    allow_network_pdf: bool = False
 
 
 @dataclass
@@ -123,7 +124,7 @@ def run_import_bib(paths: ProjectPaths, request: ImportBibRequest) -> ImportBibR
 # ---------------------------------------------------------------------------
 
 
-def _process_entry(
+def _process_entry(  # noqa: PLR0912 - the branches are all well-contained ingestion guards
     *,
     paths: ProjectPaths,
     entry: BibEntry,
@@ -175,14 +176,16 @@ def _process_entry(
         mode = "manual"
 
     pdf_path = find_pdf_candidate(entry, request.pdf_dir) if request.pdf_dir is not None else None
+    pdf_source: Literal["local", "network", "none"] = "none"
+    if pdf_path is not None:
+        pdf_source = "local"
 
     if request.dry_run:
         return ImportEntry(
             **common,
             mode=mode,
             paper_id=paper_id,
-            pdf_source="local" if pdf_path is not None else "none",
-            pdf_archive=None,
+            pdf_source=pdf_source,
             status=ImportEntryStatus.would_import,
         )
 
@@ -199,6 +202,15 @@ def _process_entry(
             pdf_path,
             force_pdf=request.force_pdf or request.on_duplicate == "force",
         )
+        if pdf_archive is None and request.allow_network_pdf and entry.arxiv_id:
+            pdf_archive = _download_arxiv_pdf_to_archive(
+                paths,
+                paper_id=paper_id,
+                arxiv_id=entry.arxiv_id,
+                force_pdf=request.force_pdf or request.on_duplicate == "force",
+            )
+            if pdf_archive is not None:
+                pdf_source = "network"
         _write_literature_entry(
             paths,
             fm,
@@ -211,7 +223,7 @@ def _process_entry(
             **common,
             mode=mode,
             paper_id=paper_id,
-            pdf_source="local" if pdf_path is not None else "none",
+            pdf_source=pdf_source,
             status=ImportEntryStatus.skipped_error,
             error=str(exc),
         )
@@ -220,10 +232,32 @@ def _process_entry(
         **common,
         mode=mode,
         paper_id=paper_id,
-        pdf_source="local" if pdf_path is not None else "none",
+        pdf_source=pdf_source,
         pdf_archive=str(pdf_archive) if pdf_archive is not None else None,
         status=ImportEntryStatus.imported,
     )
+
+
+def _download_arxiv_pdf_to_archive(
+    paths: ProjectPaths,
+    *,
+    paper_id: str,
+    arxiv_id: str,
+    force_pdf: bool,
+) -> Path | None:
+    """Fetch ``arxiv_id`` and archive it; returns ``None`` if the archive
+    already exists and ``force_pdf`` is false.
+    """
+    from lgrlw.fs import ensure_dir
+    from lgrlw.ingest.pdf_download import fetch_arxiv_pdf
+
+    ensure_dir(paths.kb_raw_pdf)
+    destination = paths.kb_raw_pdf / f"{paper_id}.pdf"
+    if destination.exists() and not force_pdf:
+        return None
+    result = fetch_arxiv_pdf(arxiv_id, allow_network_pdf=True)
+    destination.write_bytes(result.content)
+    return destination
 
 
 def _shared_fields(entry: BibEntry) -> dict[str, Any]:
