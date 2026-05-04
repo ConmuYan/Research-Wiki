@@ -31,6 +31,12 @@ from lgrlw.commands.add_literature import (
 )
 from lgrlw.commands.init import _materialise_subproject
 from lgrlw.config import dump_config, load_config
+from lgrlw.convert import list_backends
+from lgrlw.convert.run import (
+    ConvertOutcome,
+    convert_paper,
+    list_paper_ids_with_pdf,
+)
 from lgrlw.export.pack import build_export_pack
 from lgrlw.fs import copy_tree, read_frontmatter, write_frontmatter
 from lgrlw.ingest import BibtexParseError
@@ -506,6 +512,45 @@ def create_server(default_root: Path | None = None) -> FastMCP:
             "counts": _attach_counts(results),
         }
 
+    @server.tool(
+        name="convert_pdf",
+        title="Convert PDF to Markdown",
+        description=(
+            "Render archived PDFs under literature-kb/01_Raw/pdf/ into Markdown under "
+            "literature-kb/01_Raw/mineru_md/<paper_id>/. Backend defaults to `stub` "
+            "(zero-dependency placeholder); pass backend='mineru' after "
+            '`pip install "lgrlw[mineru]"` for full extraction.'
+        ),
+        structured_output=True,
+    )
+    def convert_pdf(
+        paper_id: str | None = None,
+        all_papers: bool = False,
+        backend: str = "stub",
+        force: bool = False,
+        root: str | None = None,
+        direction: str | None = None,
+    ) -> dict[str, Any]:
+        paths = _resolve_paths(root, direction, default_root)
+        if backend not in list_backends():
+            raise ValueError(f"unknown backend {backend!r}; available: {list_backends()}")
+        if paper_id is None and not all_papers:
+            raise ValueError("provide paper_id or set all_papers=true")
+        if paper_id is not None and all_papers:
+            raise ValueError("paper_id and all_papers are mutually exclusive")
+
+        ids = list_paper_ids_with_pdf(paths) if all_papers else [paper_id or ""]
+        outcomes = [
+            convert_paper(paths, paper_id=pid, backend=backend, force=force) for pid in ids if pid
+        ]
+        return {
+            "ok": not any(o.status == "skipped_error" for o in outcomes),
+            "root": str(paths.root),
+            "backend": backend,
+            "outcomes": [_convert_outcome_payload(o) for o in outcomes],
+            "counts": _convert_counts(outcomes),
+        }
+
     @server.resource(
         "lgrlw://project/summary",
         name="project_summary",
@@ -602,6 +647,33 @@ def _attach_counts(outcomes: list[AttachOutcome]) -> dict[str, int]:
         "archived": 0,
         "already_attached": 0,
         "unmatched": 0,
+        "skipped_error": 0,
+    }
+    for outcome in outcomes:
+        counts[outcome.status] = counts.get(outcome.status, 0) + 1
+    counts["total"] = len(outcomes)
+    return counts
+
+
+def _convert_outcome_payload(outcome: ConvertOutcome) -> dict[str, Any]:
+    """Serialise a :class:`ConvertOutcome` for MCP transport."""
+    return {
+        "paper_id": outcome.paper_id,
+        "backend": outcome.backend,
+        "status": outcome.status,
+        "output_dir": str(outcome.output_dir) if outcome.output_dir else None,
+        "markdown_path": (str(outcome.markdown_path) if outcome.markdown_path else None),
+        "source_pdf": str(outcome.source_pdf) if outcome.source_pdf else None,
+        "error": outcome.error,
+    }
+
+
+def _convert_counts(outcomes: list[ConvertOutcome]) -> dict[str, int]:
+    """Summarise convert outcomes by status plus a total."""
+    counts: dict[str, int] = {
+        "converted": 0,
+        "skipped_exists": 0,
+        "skipped_no_pdf": 0,
         "skipped_error": 0,
     }
     for outcome in outcomes:

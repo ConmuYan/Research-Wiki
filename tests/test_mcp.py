@@ -52,6 +52,7 @@ async def test_mcp_stdio_exposes_tools_and_resources(
             "lint",
             "import_bib",
             "attach_pdf",
+            "convert_pdf",
         }.issubset(tool_names)
 
         created_root = tmp_path / "created_by_mcp"
@@ -185,6 +186,28 @@ async def test_mcp_stdio_exposes_tools_and_resources(
             beta / "literature-kb" / "01_Raw" / "pdf" / "lovelace-2024-tool-agents.pdf"
         ).is_file()
         assert not (inbox / "lovelace-2024-tool-agents.pdf").exists()
+
+        convert_result = await session.call_tool(
+            "convert_pdf",
+            {
+                "paper_id": "lovelace-2024-tool-agents",
+                "backend": "stub",
+                "direction": "beta",
+            },
+        )
+        assert_ok(convert_result)
+        convert_payload = json.loads(convert_result.content[0].text)
+        assert convert_payload["backend"] == "stub"
+        assert convert_payload["outcomes"][0]["status"] == "converted"
+        stub_markdown = (
+            beta
+            / "literature-kb"
+            / "01_Raw"
+            / "mineru_md"
+            / "lovelace-2024-tool-agents"
+            / "lovelace-2024-tool-agents.md"
+        )
+        assert stub_markdown.is_file()
 
         lint_result = await session.call_tool("lint", {})
         assert_ok(lint_result)

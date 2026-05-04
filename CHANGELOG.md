@@ -7,6 +7,27 @@ and this project uses semantic versioning.
 
 ## [Unreleased]
 
+### Added — PDF-to-Markdown conversion (v0.5 series)
+
+- `lgrlw convert-pdf <paper-id>` and `--all` render archived PDFs under
+  `literature-kb/01_Raw/mineru_md/<paper_id>/`. Pluggable backends via
+  a tiny registry: `stub` (zero-dependency placeholder, default) and
+  `mineru` (via the `lgrlw[mineru]` extra that pulls `magic-pdf`). The
+  registry exposes `list_backends()` so downstream tools can discover
+  what is available.
+- MCP `convert_pdf` tool mirrors the CLI and returns per-paper
+  `outcomes` + `counts`. Unknown backends and missing PDFs are
+  surfaced as structured results rather than tool errors.
+- New `lgrlw.convert` sub-package: `base.py` (plugin interface,
+  registry, exceptions), `stub.py` (placeholder backend), `mineru.py`
+  (deferred-import MinerU backend), and `run.py` (per-paper
+  orchestrator).
+- `convert-pdf` appends a canonical
+  `YYYY-MM-DDTHH:MM:SSZ convert-pdf backend=<name> id=<paper-id>`
+  line to `literature-kb/00_System/log.md`.
+- `--force` wipes the existing output directory so backends that emit
+  multiple artifacts never mix old and new assets.
+
 ### Added — PDF attachment to existing KB papers (v0.4.x series)
 
 - `lgrlw attach-pdf` with two deterministic modes. Explicit mode

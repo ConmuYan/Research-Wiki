@@ -35,6 +35,7 @@ The server exposes tools that mirror the CLI backend. Every tool returns a JSON-
 | `lint` | Run structure/schema/boundary/manifest lint. |
 | `import_bib` | Batch-create paper cards from a BibTeX file. Offline, reuses `add_literature` per entry, returns a manifest (v0.4). |
 | `attach_pdf` | Archive a local PDF against an existing KB paper. Explicit mode (`paper_id` + `pdf_path`) or scan mode (`scan_dir` / `scan_incoming`). Offline (v0.4.x). |
+| `convert_pdf` | Render archived PDFs to Markdown via a pluggable backend (`stub` default, `mineru` via the `lgrlw[mineru]` extra). Supports single paper or `all_papers=true` (v0.5). |
 
 ### Root and direction selection
 
@@ -95,6 +96,18 @@ The tool result contains `run_id`, `manifest_path`, `source_bib` (archived copy)
 | `root` / `direction` | string | Standard project-root / monorepo selectors. |
 
 The tool result contains `mode` (`"explicit"` / `"scan"`), `outcomes` (a list of per-PDF records with `status` ∈ `{archived, already_attached, unmatched, skipped_error}`), and, in scan mode, `scan_dir` and `counts`.
+
+### `convert_pdf` arguments
+
+| Argument | Type | Notes |
+|---|---|---|
+| `paper_id` | string | KB paper id. Mutually exclusive with `all_papers=true`. |
+| `all_papers` | bool | Convert every paper that has an archived PDF. |
+| `backend` | string | `stub` (default) or `mineru` (requires `pip install "lgrlw[mineru]"`). Must match a name returned by `list_backends()`. |
+| `force` | bool | Replace an existing output directory for the same paper id. |
+| `root` / `direction` | string | Standard project-root / monorepo selectors. |
+
+The tool result contains `backend`, `outcomes` (one per paper, with `status` ∈ `{converted, skipped_exists, skipped_no_pdf, skipped_error}`, `markdown_path`, `output_dir`, `source_pdf`, `error`), and a `counts` summary. Unknown backends raise a tool error; missing PDFs or existing outputs surface as structured outcome rows instead.
 
 ## Resources
 

@@ -14,6 +14,7 @@ $ lgrlw --help
 | [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual`, `--doi`, `--arxiv`, `--openalex`, or `--ss`). |
 | [`lgrlw import-bib`](#lgrlw-import-bib) | Batch-create paper cards from a BibTeX file (v0.4). |
 | [`lgrlw attach-pdf`](#lgrlw-attach-pdf) | Archive a local PDF against an existing KB paper (v0.4.x). |
+| [`lgrlw convert-pdf`](#lgrlw-convert-pdf) | Render archived PDFs to Markdown via a backend plugin (v0.5). |
 | [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
 | [`lgrlw promote`](#lgrlw-promote) | Promote an accepted workspace paper into the KB. |
 | [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
@@ -231,6 +232,43 @@ existing KB papers in this order: paper-id substring → arXiv id → DOI
 - Appends an `attach-pdf` line to `literature-kb/00_System/log.md`.
 - Returns a status table; exit code is non-zero only when at least one
   entry is `skipped_error`. `unmatched` scan results are informational.
+
+---
+
+## `lgrlw convert-pdf`
+
+Render archived PDFs under `literature-kb/01_Raw/pdf/` into Markdown
+under `literature-kb/01_Raw/mineru_md/<paper_id>/`. The backend is
+pluggable:
+
+- `stub` (default, zero-dependency): writes a deterministic placeholder
+  Markdown file recording the source PDF. Use this to wire up agent
+  workflows that fill the body in later.
+- `mineru` (optional): requires `pip install "lgrlw[mineru]"` and
+  delegates to MinerU's `magic-pdf` library for a full extraction.
+
+```
+lgrlw convert-pdf <paper-id> [--backend stub|mineru] [--force] \
+  [--root <project-root>] [--direction <slug>]
+
+lgrlw convert-pdf --all [--backend stub|mineru] [--force] \
+  [--root <project-root>] [--direction <slug>]
+```
+
+| Option | Meaning |
+|---|---|
+| `paper-id` | KB paper id. Mutually exclusive with `--all`. |
+| `--all` | Convert every paper that has an archived PDF under `01_Raw/pdf/`. |
+| `--backend` | Converter backend; `stub` default, `mineru` needs the optional extra. |
+| `--force` | Replace an existing output directory for the same paper id. |
+| `--root` / `--direction` | Standard project-root / monorepo selectors. |
+
+**Output.**
+
+- Creates `literature-kb/01_Raw/mineru_md/<paper_id>/<paper_id>.md`
+  (and, for `mineru`, any extracted assets alongside it).
+- Appends a `convert-pdf` line to `literature-kb/00_System/log.md`.
+- Exit code is non-zero if any paper reports `skipped_error`.
 
 ---
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lgrlw"
-version = "0.4.1.dev0"
+version = "0.5.0.dev0"
 description = "Literature-Grounded Research Lifecycle Wiki — a long-horizon research operating system with strict KB/Workspace separation and immutable export snapshots."
 readme = "README.md"
 license = { text = "MIT" }
@@ -58,6 +58,12 @@ mcp = [
 # minimal for users who only use ``add-literature``.
 bib = [
   "bibtexparser>=1.4,<2.0",
+]
+# v0.5: opt-in MinerU backend for ``lgrlw convert-pdf``. MinerU is a
+# heavyweight PDF extractor; users who only need the zero-dependency
+# ``stub`` backend do not need this extra.
+mineru = [
+  "magic-pdf>=0.6",
 ]
 dev = [
   "build>=1.2",
@@ -170,5 +176,5 @@ disallow_untyped_decorators = false
 warn_return_any = false
 
 [[tool.mypy.overrides]]
-module = ["bibtexparser.*", "slugify.*"]
+module = ["bibtexparser.*", "magic_pdf.*", "slugify.*"]
 ignore_missing_imports = true
