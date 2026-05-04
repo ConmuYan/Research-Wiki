@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Annotated, Literal
@@ -100,6 +101,23 @@ def add_literature_command(
             help="Overwrite an existing paper card and metadata with the same id.",
         ),
     ] = False,
+    pdf: Annotated[
+        Path | None,
+        typer.Option(
+            "--pdf",
+            help=(
+                "Optional path to a local PDF. Copied to "
+                "literature-kb/01_Raw/pdf/<paper_id>.pdf. No network."
+            ),
+        ),
+    ] = None,
+    force_pdf: Annotated[
+        bool,
+        typer.Option(
+            "--force-pdf",
+            help="Overwrite an existing archived PDF with the same paper id.",
+        ),
+    ] = False,
     root: Annotated[
         Path | None,
         typer.Option("--root", help="Project root (auto-detect if omitted)."),
@@ -189,7 +207,14 @@ def add_literature_command(
         fm = _fetched_frontmatter(metadata, status=status, tags=tags_list, paper_id=paper_id)
         source_label = "ss"
 
-    _write_literature_entry(paths, fm, force=force, source_label=source_label)
+    pdf_archive = _archive_pdf(paths, fm.id, pdf, force_pdf=force_pdf)
+    _write_literature_entry(
+        paths,
+        fm,
+        force=force,
+        source_label=source_label,
+        pdf_archive=pdf_archive,
+    )
 
 
 def _select_mode(
@@ -393,12 +418,50 @@ def _fetched_frontmatter(
         raise typer.Exit(code=1) from exc
 
 
+def _archive_pdf(
+    paths: ProjectPaths,
+    paper_id: str,
+    pdf: Path | None,
+    *,
+    force_pdf: bool,
+) -> Path | None:
+    """Copy ``pdf`` to ``kb_raw_pdf/<paper_id>.pdf`` and return the archive path.
+
+    Returns ``None`` if no PDF is provided. Raises a :class:`typer.Exit` if the
+    source is missing or a destination already exists without ``force_pdf``.
+    The copy is local-only; this helper never touches the network.
+    """
+    if pdf is None:
+        return None
+
+    source = pdf.expanduser().resolve()
+    if not source.is_file():
+        console.print(f"[red]error[/red] --pdf path does not exist: {source}")
+        raise typer.Exit(code=1)
+    if source.suffix.lower() != ".pdf":
+        console.print(f"[red]error[/red] --pdf must point at a .pdf file (got {source.name})")
+        raise typer.Exit(code=1)
+
+    ensure_dir(paths.kb_raw_pdf)
+    destination = paths.kb_raw_pdf / f"{paper_id}.pdf"
+    if destination.exists() and not force_pdf:
+        console.print(
+            f"[red]error[/red] archived PDF already exists at {destination}; "
+            "re-run with --force-pdf to replace it"
+        )
+        raise typer.Exit(code=1)
+
+    shutil.copyfile(source, destination)
+    return destination
+
+
 def _write_literature_entry(
     paths: ProjectPaths,
     fm: PaperFrontmatter,
     *,
     force: bool,
     source_label: str,
+    pdf_archive: Path | None = None,
 ) -> None:
     ensure_dir(paths.kb_papers)
     paper_path = paths.kb_papers / f"{fm.id}.md"
@@ -421,11 +484,14 @@ def _write_literature_entry(
     )
 
     action = "replace" if force and paper_exists else "add"
-    _append_log(paths, f"add-literature {source_label} {action} id={fm.id}")
+    log_suffix = " pdf=archived" if pdf_archive is not None else ""
+    _append_log(paths, f"add-literature {source_label} {action} id={fm.id}{log_suffix}")
 
     console.print(f"[green]added[/green] {fm.id}")
     console.print(f"  card     : {paper_path.relative_to(paths.root)}")
     console.print(f"  metadata : {meta_path.relative_to(paths.root)}")
+    if pdf_archive is not None:
+        console.print(f"  pdf      : {pdf_archive.relative_to(paths.root)}")
 
 
 def _split_csv(raw: str) -> list[str]:

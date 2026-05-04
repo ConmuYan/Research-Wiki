@@ -7,7 +7,26 @@ and this project uses semantic versioning.
 
 ## [Unreleased]
 
-### Added
+### Added — Literature input (v0.3.1 series)
+
+- `lgrlw add-literature --pdf <file>` and matching `--force-pdf` flag
+  attach a local PDF to the new KB entry. The file is copied verbatim
+  to `literature-kb/01_Raw/pdf/<paper_id>.pdf`; the source path is
+  never mutated and no network call is made. Works with every
+  ingestion mode (`--manual`, `--doi`, `--arxiv`, `--openalex`, `--ss`).
+- MCP `add_literature` tool gains optional `pdf_path` and `force_pdf`
+  parameters that reuse the same local-only archiver and surface the
+  resulting `pdf_archive` path in the tool result.
+- `ProjectPaths` exposes canonical accessors for the ingestion-era
+  layout: `kb_raw_pdf`, `kb_raw_pdf_incoming`, `kb_raw_mineru_md`, and
+  `kb_raw_imports`, documenting the directories that later v0.4 /
+  v0.5 features will write into.
+- New documentation: `docs/recipes/bib-to-kb.md` — a reference
+  Claude Code / agent workflow that drives Research-Wiki through MCP
+  to turn a BibTeX file plus local PDFs into KB paper cards without
+  touching the filesystem directly.
+
+### Added — v0.3.0 features
 
 - `lgrlw init --monorepo`, `lgrlw add-direction`, and `--direction <slug>`
   selectors on project-scoped commands add multi-direction monorepo support

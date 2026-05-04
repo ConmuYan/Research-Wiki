@@ -19,6 +19,7 @@ from mcp.server.fastmcp import FastMCP
 
 from lgrlw._resources import templates_root
 from lgrlw.commands.add_literature import (
+    _archive_pdf,
     _fetch_arxiv_metadata,
     _fetch_doi_metadata,
     _fetch_openalex_metadata,
@@ -229,6 +230,8 @@ def create_server(default_root: Path | None = None) -> FastMCP:
         tags: str | None = None,
         paper_id: str | None = None,
         force: bool = False,
+        pdf_path: str | None = None,
+        force_pdf: bool = False,
         root: str | None = None,
         direction: str | None = None,
     ) -> dict[str, Any]:
@@ -283,13 +286,26 @@ def create_server(default_root: Path | None = None) -> FastMCP:
         except typer.Exit as exc:
             raise ValueError("invalid add_literature request") from exc
 
-        _write_literature_entry(paths, fm, force=force, source_label=mode)
+        pdf = Path(pdf_path) if pdf_path else None
+        try:
+            pdf_archive = _archive_pdf(paths, fm.id, pdf, force_pdf=force_pdf)
+        except typer.Exit as exc:
+            raise ValueError("invalid pdf attachment") from exc
+
+        _write_literature_entry(
+            paths,
+            fm,
+            force=force,
+            source_label=mode,
+            pdf_archive=pdf_archive,
+        )
         return {
             "ok": True,
             "root": str(paths.root),
             "paper_id": fm.id,
             "paper_card": str(paths.kb_papers / f"{fm.id}.md"),
             "metadata_json": str(paths.kb_raw_metadata / f"{fm.id}.json"),
+            "pdf_archive": str(pdf_archive) if pdf_archive is not None else None,
         }
 
     @server.tool(

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lgrlw"
-version = "0.3.0.dev0"
+version = "0.3.1.dev0"
 description = "Literature-Grounded Research Lifecycle Wiki — a long-horizon research operating system with strict KB/Workspace separation and immutable export snapshots."
 readme = "README.md"
 license = { text = "MIT" }

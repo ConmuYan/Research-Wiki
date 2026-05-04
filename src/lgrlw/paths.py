@@ -10,7 +10,7 @@ The layout is::
         literature-kb/              # public literature (KB)
             00_System/
             01_Raw/
-                bibtex/ pdf/ mineru_md/ metadata/
+                bibtex/ pdf/ mineru_md/ metadata/ imports/
             02_Literature/Papers/
             03_Field_Structure/
             04_Concepts/
@@ -68,6 +68,22 @@ class ProjectPaths:
     @property
     def kb_raw_metadata(self) -> Path:
         return self.kb_raw / "metadata"
+
+    @property
+    def kb_raw_pdf(self) -> Path:
+        return self.kb_raw / "pdf"
+
+    @property
+    def kb_raw_pdf_incoming(self) -> Path:
+        return self.kb_raw_pdf / "_incoming"
+
+    @property
+    def kb_raw_mineru_md(self) -> Path:
+        return self.kb_raw / "mineru_md"
+
+    @property
+    def kb_raw_imports(self) -> Path:
+        return self.kb_raw / "imports"
 
     @property
     def kb_papers(self) -> Path:

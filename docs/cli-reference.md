@@ -140,6 +140,8 @@ API in `semantic_scholar_id`.
 | `--tags` | Comma-separated tags. |
 | `--id` | Override the auto-generated slug. |
 | `--force` | Replace an existing paper card and metadata with the same id. Without this flag, duplicate ids fail. |
+| `--pdf` | Optional path to a local `.pdf` file. The file is copied verbatim to `literature-kb/01_Raw/pdf/<id>.pdf`; no network call is made and the source file is not modified. Works with every mode (`--manual`, `--doi`, `--arxiv`, `--openalex`, `--ss`). |
+| `--force-pdf` | Replace an existing archived PDF with the same paper id. Required even together with `--force`; `--force` alone will not overwrite PDFs. |
 | `--root` | Existing Research-Wiki project root (auto-detected if omitted). |
 | `--direction` | Monorepo direction slug when `--root` points at a monorepo umbrella. |
 
@@ -147,6 +149,7 @@ API in `semantic_scholar_id`.
 
 - Paper card: `literature-kb/02_Literature/Papers/<id>.md` (frontmatter + body scaffold).
 - Metadata snapshot: `literature-kb/01_Raw/metadata/<id>.json`.
+- Archived PDF (only if `--pdf` was given): `literature-kb/01_Raw/pdf/<id>.pdf`.
 - Log line: appended to `literature-kb/00_System/log.md`.
 
 ---
