@@ -22,6 +22,7 @@ from lgrlw import __version__
 from lgrlw.commands.add_direction import add_direction_command
 from lgrlw.commands.add_literature import add_literature_command
 from lgrlw.commands.export_pack import export_pack_command
+from lgrlw.commands.import_bib import import_bib_command
 from lgrlw.commands.init import init_command
 from lgrlw.commands.lint import lint_command
 from lgrlw.commands.mcp import mcp_app
@@ -76,6 +77,10 @@ app.command(
     "add-direction",
     help="Add a research direction subproject to a monorepo umbrella.",
 )(add_direction_command)
+app.command(
+    "import-bib",
+    help="Batch-create KB paper cards from a BibTeX file (v0.4).",
+)(import_bib_command)
 app.add_typer(mcp_app, name="mcp")
 
 

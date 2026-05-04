@@ -33,6 +33,8 @@ from lgrlw.commands.init import _materialise_subproject
 from lgrlw.config import dump_config, load_config
 from lgrlw.export.pack import build_export_pack
 from lgrlw.fs import copy_tree, read_frontmatter, write_frontmatter
+from lgrlw.ingest import BibtexParseError
+from lgrlw.ingest.run import ImportBibError, ImportBibRequest, run_import_bib
 from lgrlw.lint import format_findings, run_all
 from lgrlw.monorepo import (
     MONOREPO_DIR,
@@ -380,6 +382,57 @@ def create_server(default_root: Path | None = None) -> FastMCP:
             "warnings": warnings,
             "findings": [finding.model_dump(mode="json") for finding in findings],
             "text": format_findings(findings, project_root=report_root) if findings else "",
+        }
+
+    @server.tool(
+        name="import_bib",
+        title="Import BibTeX",
+        description=(
+            "Batch-create KB paper cards from a BibTeX file. Parses the file offline, "
+            "detects duplicates against the existing KB, optionally matches local PDFs, "
+            "and writes an audit manifest under literature-kb/01_Raw/imports/<run_id>/. "
+            "No network calls; per-entry metadata comes from the BibTeX fields."
+        ),
+        structured_output=True,
+    )
+    def import_bib(
+        bib_path: str,
+        root: str | None = None,
+        direction: str | None = None,
+        pdf_dir: str | None = None,
+        dry_run: bool = False,
+        on_duplicate: Literal["skip", "force", "fail"] = "skip",
+        default_status: PaperStatusName = "published",
+        tags: str | None = None,
+    ) -> dict[str, Any]:
+        paths = _resolve_paths(root, direction, default_root)
+        request = ImportBibRequest(
+            bib_path=Path(bib_path),
+            pdf_dir=Path(pdf_dir) if pdf_dir else None,
+            dry_run=dry_run,
+            on_duplicate=on_duplicate,
+            default_status=PaperStatus(default_status),
+            tags=tuple(_split_csv(tags or "")),
+            direction=direction,
+        )
+        try:
+            result = run_import_bib(paths, request)
+        except (BibtexParseError, ImportBibError) as exc:
+            raise ValueError(str(exc)) from exc
+
+        return {
+            "ok": True,
+            "root": str(paths.root),
+            "run_id": result.manifest.run_id,
+            "dry_run": dry_run,
+            "manifest_path": (
+                str(result.manifest_path) if result.manifest_path is not None else None
+            ),
+            "source_bib": (
+                str(result.source_bib_path) if result.source_bib_path is not None else None
+            ),
+            "counts": result.manifest.counts,
+            "entries": [entry.model_dump(mode="json") for entry in result.manifest.entries],
         }
 
     @server.resource(

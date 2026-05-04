@@ -7,6 +7,28 @@ and this project uses semantic versioning.
 
 ## [Unreleased]
 
+### Added — Batch BibTeX ingestion (v0.4 series)
+
+- `lgrlw import-bib <bib-file>` batch-creates KB paper cards from a
+  BibTeX file. Offline, deterministic, and auditable: every run writes
+  `literature-kb/01_Raw/imports/<run_id>/manifest.json` plus an
+  archived copy of the source `.bib`. Supports `--dry-run`,
+  `--on-duplicate skip|force|fail`, `--pdf-dir`, `--default-status`,
+  and `--tags`.
+- New `lgrlw.ingest` sub-package: `parse_bib`, `BibEntry`,
+  `find_pdf_candidate`, `ImportManifest`, `ImportEntry`,
+  `new_run_id`, `write_manifest`, `run_import_bib`.
+- Optional `bib` extra (`pip install "lgrlw[bib]"`) pulling
+  `bibtexparser>=1.4,<2.0`. The core install remains dependency-free
+  for users who only need `add-literature`.
+- MCP `import_bib` tool mirrors the CLI and returns the manifest JSON
+  plus `run_id`, `counts`, and the archived `source_bib` path.
+- `schemas/import_manifest.schema.json` and `docs/import-bib.md`
+  document the manifest wire format and exit-code semantics.
+- Run ids use microsecond precision
+  (`YYYYMMDD_HHMMSS_ffffff_bib_import`) so consecutive invocations
+  (tests, agent retries) produce distinct run directories.
+
 ### Added — Literature input (v0.3.1 series)
 
 - `lgrlw add-literature --pdf <file>` and matching `--force-pdf` flag

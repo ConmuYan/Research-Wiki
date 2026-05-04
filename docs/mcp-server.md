@@ -33,6 +33,7 @@ The server exposes tools that mirror the CLI backend. Every tool returns a JSON-
 | `export_pack` | Build an immutable KB snapshot for a workspace. |
 | `promote` | Promote an accepted workspace paper into the KB. |
 | `lint` | Run structure/schema/boundary/manifest lint. |
+| `import_bib` | Batch-create paper cards from a BibTeX file. Offline, reuses `add_literature` per entry, returns a manifest (v0.4). |
 
 ### Root and direction selection
 
@@ -58,6 +59,22 @@ Those modes use the same fetchers and environment variables as the CLI: `CROSSRE
 - `force_pdf` (bool): replace an existing archived PDF. Required even in combination with `force`.
 
 When `pdf_path` is supplied, the tool result includes `pdf_archive` with the archived path; otherwise `pdf_archive` is `null`.
+
+### `import_bib` arguments
+
+`import_bib` is the batch counterpart of `add_literature` and mirrors the CLI in [`import-bib.md`](./import-bib.md). It requires the optional `bib` extra (`pip install "lgrlw[bib]"`).
+
+| Argument | Type | Notes |
+|---|---|---|
+| `bib_path` | string | Local path to the `.bib` file. |
+| `pdf_dir` | string | Optional; scan this directory for local PDFs and archive matches. Never fetches over the network. |
+| `dry_run` | bool | Parse + plan only; no files written. |
+| `on_duplicate` | `"skip" \| "force" \| "fail"` | How to treat entries already present in the KB. `fail` aborts the whole batch atomically. |
+| `default_status` | `"published" \| "accepted" \| "preprint"` | Applied to every created card. |
+| `tags` | string | Comma-separated tags applied to every created card. |
+| `root` / `direction` | string | Standard project-root / monorepo selectors. |
+
+The tool result contains `run_id`, `manifest_path`, `source_bib` (archived copy), `counts`, and the full `entries` list — one row per BibTeX entry. Failures in a single entry surface as `status=skipped_error` rather than a tool error; a bib parse error or the `fail` on-duplicate guard raises a tool error instead.
 
 ## Resources
 

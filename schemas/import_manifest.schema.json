@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/your-org/research-wiki/schemas/import_manifest.schema.json",
+  "title": "ImportManifest",
+  "description": "literature-kb/01_Raw/imports/<run_id>/manifest.json. Mirrors lgrlw.ingest.manifest.ImportManifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "started_at",
+    "source_bib",
+    "dry_run",
+    "on_duplicate",
+    "entries",
+    "counts"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "pattern": "^\\d{8}_\\d{6}_\\d{6}_bib_import$"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "source_bib": {"type": "string"},
+    "dry_run": {"type": "boolean"},
+    "on_duplicate": {"enum": ["skip", "force", "fail"]},
+    "pdf_dir": {"type": ["string", "null"]},
+    "direction": {"type": ["string", "null"]},
+    "entries": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/ImportEntry"}
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    }
+  },
+  "$defs": {
+    "ImportEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cite_key", "status"],
+      "properties": {
+        "cite_key": {"type": "string"},
+        "mode": {"enum": ["manual", "doi", "arxiv", "openalex", "ss", null]},
+        "arxiv_id": {"type": ["string", "null"]},
+        "doi": {"type": ["string", "null"]},
+        "openalex_id": {"type": ["string", "null"]},
+        "semantic_scholar_id": {"type": ["string", "null"]},
+        "title": {"type": "string"},
+        "authors": {"type": "array", "items": {"type": "string"}},
+        "year": {"type": ["integer", "null"]},
+        "venue": {"type": ["string", "null"]},
+        "paper_id": {"type": ["string", "null"]},
+        "pdf_source": {"enum": ["local", "none"]},
+        "pdf_archive": {"type": ["string", "null"]},
+        "status": {
+          "enum": [
+            "imported",
+            "skipped_duplicate",
+            "skipped_error",
+            "would_import",
+            "would_skip_duplicate"
+          ]
+        },
+        "error": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

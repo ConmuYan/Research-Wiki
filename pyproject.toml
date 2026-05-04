@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lgrlw"
-version = "0.3.1.dev0"
+version = "0.4.0.dev0"
 description = "Literature-Grounded Research Lifecycle Wiki — a long-horizon research operating system with strict KB/Workspace separation and immutable export snapshots."
 readme = "README.md"
 license = { text = "MIT" }
@@ -53,6 +53,12 @@ dependencies = [
 mcp = [
   "mcp>=1.0",
 ]
+# v0.4: opt-in BibTeX batch ingestion. ``lgrlw import-bib`` relies on
+# ``bibtexparser`` for robust .bib parsing, but the core install stays
+# minimal for users who only use ``add-literature``.
+bib = [
+  "bibtexparser>=1.4,<2.0",
+]
 dev = [
   "build>=1.2",
   "pytest>=8.2",
@@ -64,6 +70,7 @@ dev = [
   "twine>=5.0",
   "types-PyYAML",
   "mcp>=1.0",
+  "bibtexparser>=1.4,<2.0",
 ]
 
 [project.scripts]

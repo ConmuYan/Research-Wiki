@@ -199,6 +199,30 @@ lgrlw add-literature --ss 649def34f8be52c8b66281af98ae884c09aef38b
 
 Output: a paper card at `literature-kb/02_Literature/Papers/<slug>.md` and a JSON metadata snapshot in `literature-kb/01_Raw/metadata/<slug>.json`. The polite-pool environment variables `CROSSREF_MAILTO`, `OPENALEX_EMAIL`, and `S2_API_KEY` are honoured when set. Auto-generated BibTeX ships together with `lgrlw promote` (not `add-literature`) in v0.2.
 
+Attach a local PDF in the same call (v0.3.1+, no network):
+
+```bash
+lgrlw add-literature --arxiv 2310.11511 --pdf ./papers/self-rag.pdf
+# copies the PDF verbatim to literature-kb/01_Raw/pdf/<paper_id>.pdf
+```
+
+### Batch import from BibTeX (v0.4)
+
+```bash
+pip install "lgrlw[bib]"
+
+lgrlw import-bib refs.bib \
+  --pdf-dir ./papers \
+  --on-duplicate skip \
+  --tags "rag,llm"
+# → creates cards for every entry
+# → matches local PDFs by arxiv id / cite key / paper-id slug
+# → writes literature-kb/01_Raw/imports/<run_id>/manifest.json + source.bib
+```
+
+Offline, deterministic, and never touches the network. See
+[`docs/import-bib.md`](./docs/import-bib.md) for the full protocol.
+
 ### Start a paper workspace
 
 ```bash

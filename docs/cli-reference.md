@@ -12,6 +12,7 @@ $ lgrlw --help
 | [`lgrlw init`](#lgrlw-init) | Bootstrap a new Research-Wiki project. |
 | [`lgrlw new-workspace`](#lgrlw-new-workspace) | Create a workspace (paper or idea). |
 | [`lgrlw add-literature`](#lgrlw-add-literature) | Register a paper in the KB (`--manual`, `--doi`, `--arxiv`, `--openalex`, or `--ss`). |
+| [`lgrlw import-bib`](#lgrlw-import-bib) | Batch-create paper cards from a BibTeX file (v0.4). |
 | [`lgrlw export-pack`](#lgrlw-export-pack) | Build an immutable KB snapshot for a workspace. |
 | [`lgrlw promote`](#lgrlw-promote) | Promote an accepted workspace paper into the KB. |
 | [`lgrlw lint`](#lgrlw-lint) | Verify boundary, schema, and manifest invariants. |
@@ -151,6 +152,43 @@ API in `semantic_scholar_id`.
 - Metadata snapshot: `literature-kb/01_Raw/metadata/<id>.json`.
 - Archived PDF (only if `--pdf` was given): `literature-kb/01_Raw/pdf/<id>.pdf`.
 - Log line: appended to `literature-kb/00_System/log.md`.
+
+---
+
+## `lgrlw import-bib`
+
+Batch-create KB paper cards from a BibTeX file. Offline, deterministic,
+and auditable: every invocation writes a manifest under
+`literature-kb/01_Raw/imports/<run_id>/`.
+
+```
+lgrlw import-bib <bib-file> \
+  [--root <project-root>] [--direction <slug>] \
+  [--pdf-dir <dir>] \
+  [--dry-run] \
+  [--on-duplicate skip|force|fail] \
+  [--default-status published|accepted|preprint] \
+  [--tags "tag1,tag2"]
+```
+
+| Option | Meaning |
+|---|---|
+| `bib-file` | Path to the BibTeX file. |
+| `--pdf-dir` | Scan this directory for local PDFs. Matched by arXiv id, cite key, or paper-id slug (substring, case-insensitive). Matches are archived under `01_Raw/pdf/<paper_id>.pdf`. |
+| `--dry-run` | Parse and plan without writing anything. |
+| `--on-duplicate skip\|force\|fail` | How to treat entries whose identifiers already exist in the KB. `fail` aborts the whole batch before any write. |
+| `--default-status` | Publication status applied to every card (`published` / `accepted` / `preprint`). |
+| `--tags` | Comma-separated tags applied to every card. |
+| `--root` / `--direction` | Project-root / monorepo-direction selectors. |
+
+Requires the optional `bib` extra:
+
+```
+pip install "lgrlw[bib]"
+```
+
+See [`import-bib.md`](./import-bib.md) for the full protocol, manifest
+schema, and exit-code semantics.
 
 ---
 

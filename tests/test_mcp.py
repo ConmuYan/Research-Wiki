@@ -113,6 +113,38 @@ async def test_mcp_stdio_exposes_tools_and_resources(
             beta / "literature-kb" / "02_Literature" / "Papers" / "lovelace-2025-promoted-paper.md"
         ).is_file()
 
+        bib_file = tmp_path / "mcp_refs.bib"
+        bib_file.write_text(
+            "@article{bengio2013rep,\n"
+            "  author = {Yoshua Bengio},\n"
+            "  title  = {Representation Learning: A Review and New Perspectives},\n"
+            "  year   = {2013},\n"
+            "  eprint = {1206.5538},\n"
+            "  archiveprefix = {arXiv},\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        import_result = await session.call_tool(
+            "import_bib",
+            {
+                "bib_path": str(bib_file),
+                "direction": "beta",
+                "on_duplicate": "skip",
+            },
+        )
+        assert_ok(import_result)
+        import_payload = json.loads(import_result.content[0].text)
+        assert import_payload["counts"]["imported"] == 1
+        assert import_payload["manifest_path"]
+        expected_bengio = (
+            beta
+            / "literature-kb"
+            / "02_Literature"
+            / "Papers"
+            / "bengio-2013-representation-learning-a-review-and-new-perspec.md"
+        )
+        assert expected_bengio.is_file()
+
         lint_result = await session.call_tool("lint", {})
         assert_ok(lint_result)
 
